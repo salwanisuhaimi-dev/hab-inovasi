@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Soalan Lazim</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+</head>
+<body class="bg-gray-50 text-gray-800">
+  
+  <div id="header"></div>
+  
+  <header class="bg-gradient-to-r from-blue-50 via-white to-blue-50 shadow-inner border-b border-blue-100">
+    <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 text-center sm:text-left">
+      <h1 class="text-4xl font-extrabold text-gray-800 tracking-tight">Soalan Lazim</h1>
+      <p class="mt-2 text-lg text-gray-600">
+        Jawapan kepada soalan yang sering ditanya
+      </p>
+    </div>
+  </header>
+
+  <!-- FAQ Section -->
+  <main class="max-w-5xl mx-auto px-4 py-12">
+    <div id="details" class="space-y-6">
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <div id="footer"></div>
+
+  <!-- JS for Accordion -->
+  <script>
+    // Load shared header
+  fetch("header.html")
+    .then(res => res.text())
+    .then(html => {
+      document.getElementById("header").innerHTML = html;
+    });
+
+    fetch("footer.html")
+    .then(res => res.text())
+    .then(html => {
+      document.getElementById("footer").innerHTML = html;
+    });
+  const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQpim1tLE_YzeFsEAKmi92Irs2_WWAj1A73LlJZZ8S5qac3Rkv7U7ld4xc-0vYvtqTna9TpyIMMZhQF/pub?gid=1260341243&single=true&output=csv";
+
+  fetch(sheetURL)
+    .then(res => res.text())
+    .then(csv => {
+      const results = Papa.parse(csv, { header: false, skipEmptyLines: true });
+      let rows = results.data;
+
+          // ✅ Use row 2 as header (index 1)
+      const headers = rows[1].map(h => h.trim().toLowerCase());
+      const dataRows = rows.slice(2); // actual data starts from row 3
+
+          // Convert to objects
+      const formatted = dataRows.map(r => {
+            const obj = {};
+            headers.forEach((h, i) => obj[h] = r[i]);
+            return obj;
+      });
+      
+      const detailsContainer = document.getElementById("details");
+
+     formatted.forEach((row, index) => {
+        const question = row.soalan?.trim();
+        const answer = row.jawapan?.trim();
+
+        if (question && answer) {
+            const faqItem = document.createElement("div");
+            faqItem.classList.add("bg-white", "shadow", "rounded-2xl", "overflow-hidden", "transition");
+
+        faqItem.innerHTML = `
+          <button class="w-full text-left px-6 py-4 flex justify-between items-center focus:outline-none faq-toggle">
+            <span class="font-semibold text-lg">${question}</span>
+            <svg class="w-6 h-6 text-gray-500 transition-transform duration-300 transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          <div class="faq-content px-6 pb-4 hidden text-gray-600">
+            ${answer}
+          </div>
+        `;
+
+        detailsContainer.appendChild(faqItem);
+        }
+      });
+
+      // Add accordion toggle functionality
+      document.querySelectorAll(".faq-toggle").forEach(button => {
+        button.addEventListener("click", () => {
+          const content = button.nextElementSibling;
+          const icon = button.querySelector("svg");
+          content.classList.toggle("hidden");
+          icon.classList.toggle("rotate-180");
+        });
+      });
+    });
+  </script>
+
+</body>
+</html>

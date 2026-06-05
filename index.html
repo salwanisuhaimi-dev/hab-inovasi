@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HAB INOVASI JPA</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+<div id="header"></div>
+  
+  <!-- HERO SECTION -->
+  <section class="relative bg-[url('img/background.jpg')] bg-cover bg-center text-white min-h-[600px] flex items-center justify-center text-center">
+    <div class="absolute inset-0 bg-black/20"></div>
+    <div class="relative z-10">
+        <h2 class="text-4xl font-bold mb-4">Selamat Datang ke Hab Inovasi JPA</h2>
+        <p class="text-lg mb-6 italic">"Menggerakkan Perubahan, Berkhidmat kepada Negara"</p>
+        <a href="#about" class="bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100">
+            Tentang Kami
+        </a>
+    </div>
+  </section>
+
+  <section id="pertandingan" class="py-16 max-w-7xl mx-auto px-4">
+    <div class="text-center mb-12">
+         <h2 class="text-3xl font-extrabold text-gray-900"></h2>
+    </div>
+    <div class="grid md:grid-cols-3 gap-8">
+      <div class="bg-white p-6 rounded-lg shadow hover:shadow-lg transition">
+        <a href="gallery.html" class="no-underline text-gray-800 hover:text-gray-800">
+            <img src="img/kik.PNG" alt="KIK" style="height: 150px; width: 300px;" class="mx-auto mb-4">
+            <h4 class="text-xl font-semibold mb-2">Projek Inovasi JPA</h4>
+            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam mi elit, laoreet quis sapien in, blandit venenatis augue.</p>
+        </a>
+      </div>
+      <div class="bg-white p-6 rounded-lg shadow hover:shadow-lg transition">
+        <a href="gallery.html" class="no-underline text-gray-800 hover:text-gray-800">
+          <img src="img/anugerahinovasi.PNG" alt="AI" style="height: 150px; width: 300px;" class="mx-auto mb-4"> 
+          <h4 class="text-xl font-semibold mb-2">Pertandingan Inovasi JPA</h4>
+          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam mi elit, laoreet quis sapien in, blandit venenatis augue.</p>
+        </a>
+      </div>
+      <div class="bg-white p-6 rounded-lg shadow hover:shadow-lg transition">
+        <a href="gallery.html" class="no-underline text-gray-800 hover:text-gray-800">
+           <img src="img/ideainovasi.PNG" alt="Idea" style="height: 150px; width: 300px;" class="mx-auto mb-4"> 
+           <h4 class="text-xl font-semibold mb-2">Penyertaan Pertandingan Inovasi JPM</h4>
+           <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam mi elit, laoreet quis sapien in, blandit venenatis augue.</p>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section id="about" class="bg-gradient-to-b from-gray-50 to-gray-100 py-16 relative overflow-hidden" style="background: whitesmoke">
+    <div class="text-center mb-12">
+      <h3 class="text-3xl font-extrabold text-gray-900">Tentang Kami</h3>
+    </div>
+    <div class="max-w-5xl mx-auto px-4 text-center">
+      <p class="text-lg leading-relaxed">
+        Hab Inovasi JPA adalah platform sehenti yang menghimpunkan maklumat pertandingan dan projek-projek inovasi yang dipertandingkan di JPA.
+      </p>
+    </div>
+  </section>
+
+  <div id="footer"></div>
+  
+<script>
+    fetch("header.html")
+    .then(res => res.text())
+    .then(html => {
+      document.getElementById("header").innerHTML = html;
+    });
+
+    fetch("footer.html")
+    .then(res => res.text())
+    .then(html => {
+      document.getElementById("footer").innerHTML = html;
+    });
+</script>
+</body>
+</html>

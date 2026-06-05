@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Projek</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800">
+    <!-- HEADER -->
+  <div id="header"></div>
+
+  <main class="flex items-center justify-center p-6 my-0">
+      <div class="max-w-6xl w-full bg-white rounded-lg shadow p-6 grid md:grid-cols-2 gap-8" id="details"></div>
+      <div id="slideshowModal" 
+           class="fixed inset-0 bg-black bg-opacity-90 hidden items-center justify-center z-50">
+           <button id="closeBtn" class="absolute top-5 right-5 text-white text-3xl">&times;</button>
+           <button id="prevBtn" class="absolute left-5 text-white text-4xl">&#10094;</button>
+           <img id="slideshowImage" class="max-h-[90%] max-w-[90%] rounded-lg shadow-lg">
+           <button id="nextBtn" class="absolute right-5 text-white text-4xl">&#10095;</button>
+      </div>
+  </main>
+
+  <script>
+    fetch("header.html")
+    .then(res => res.text())
+    .then(html => {
+      document.getElementById("header").innerHTML = html;
+    });
+    
+    function setMainImage(src) {
+      document.getElementById("mainImage").src = src;
+    }
+    
+    const params = new URLSearchParams(window.location.search);
+    const projectId = params.get("id");
+
+    const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQpim1tLE_YzeFsEAKmi92Irs2_WWAj1A73LlJZZ8S5qac3Rkv7U7ld4xc-0vYvtqTna9TpyIMMZhQF/pub?gid=0&single=true&output=csv";
+
+    fetch(sheetURL)
+      .then(res => res.text())
+      .then(csv => {
+            const results = Papa.parse(csv, { header: true, skipEmptyLines: true });
+            const row = results.data.find(r => r.id === projectId);
+            const totalImages = 3;
+
+            const baseName = row.thumbnail.trim();
+
+            if (row) {
+              
+              let thumbnailsHTML = "";
+
+              for (let i = 1; i <= totalImages; i++) {
+                thumbnailsHTML += `
+                  <img src="img/${baseName} (${i}).jpg" 
+                       class="w-20 h-20 object-cover rounded border cursor-pointer hover:opacity-80"
+                       onclick="setMainImage(this.src)">
+                  `;
+              }
+              document.getElementById("details").innerHTML = `
+                 <!-- Left: Image Gallery -->
+                 <div>
+                      <img id="mainImage" src="img/${baseName} (1).jpg" alt="Project Image" 
+                           class="w-full h-96 object-cover rounded-lg border">
+                      <!-- Thumbnails -->
+                      <div class="flex gap-3 mt-4">
+                           ${thumbnailsHTML}
+                      </div>
+                
+                              <div class="space-y-3 my-2">
+                                  <div class="flex justify-between items-center p-3 bg-white border border-gray-200 rounded-lg shadow-sm">
+                                      <span class="text-base font-medium text-gray-800">Video Persembahan</span>
+                                      <a href="#" target="_blank" class="w-40 flex px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-md hover:bg-red-700 transition duration-150 ease-in-out shadow-md">
+                                          ▶️ Tonton Video
+                                      </a>
+                                  </div>
+                                  <div class="flex justify-between items-center p-3 bg-white border border-gray-200 rounded-lg shadow-sm">
+                                      <span class="text-base font-medium text-gray-800">Laporan Projek</span>
+                                      <a href="#" target="_blank" class="w-40 flex px-4 py-2 text-sm font-semibold text-white bg-green-600 rounded-md hover:bg-green-700 transition duration-150 ease-in-out shadow-md">
+                                          📄 Lihat Laporan
+                                      </a>
+                                  </div>
+
+                                  <div class="flex justify-between items-center p-3 bg-white border border-gray-200 rounded-lg shadow-sm">
+                                      <span class="text-base font-medium text-gray-800">Slide Projek</span>
+                                      <a href="#" target="_blank" class="w-40 flex px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700 transition duration-150 ease-in-out shadow-md">
+                                          🖼️ Lihat Slide
+                                      </a>
+                                  </div>       
+                              </div>
+                 </div>
+
+                 <!-- Right: Project Info -->
+                 <div class="flex flex-col justify-between h-full">
+                      <div>
+                           <h1 class="text-3xl font-bold text-gray-900 mb-2">${row.nama}</h1>
+                           <h2 class="text-xl font-semibold text-gray-800 mb-2">${row.kumpulan}</h2>
+                           <h2 class="text-lg font-semibold text-gray-800 mb-2">${row.bahagian}</h2>
+                           <div class="mb-6">
+                                <div class="flex flex-col space-y-1 text-gray-600">
+                                ${
+                                    row.peringkat.split(",").map((p, i) => {
+                                    const tahun = row.tahun.split(",")[i]?.trim() || "";
+                                    const pencapaian = row.pencapaian.split(",")[i]?.trim() || "";
+                                    return `<span style="font-style: oblique; font-size: medium;">
+                                    ${pencapaian} ${row.pertandingan} ${p.trim()} (${tahun})
+                                    </span>`;
+                                    }).join("") 
+                                }
+                               </div>
+                          </div>
+
+                          <div class="mt-8">
+
+                          </div>
+                       </div>
+
+                       <div class="flex-grow flex items-center">
+                          <div class="my-3">
+                              <button id="likeBtn" class="flex items-center gap-2 text-gray-700 hover:text-red-600">
+                                   <!-- Heart Outline -->
+                                   <svg id="heartIcon" xmlns="http://www.w3.org/2000/svg" fill="none" 
+                                       viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" 
+                                       class="w-8 h-8 transition-colors">
+                                       <path stroke-linecap="round" stroke-linejoin="round" 
+                                             d="M12 21l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 
+                                             2 6 4 4 6.5 4c1.74 0 3.41 1 4.22 2.44h.56C14.09 5 15.76 4 17.5 4 
+                                             20 4 22 6 22 8.5c0 3.78-3.4 6.86-8.55 11.18L12 21z"/>
+                                    </svg>
+                                    <span id="likeCount">0</span>
+                               </button>
+                               <hr class="my-6 border-gray-300">
+                               <h3 class="text-xl font-bold text-gray-700 pb-1 mb-3">Penerangan Projek:</h3>
+                               <p class="text-gray-600">${row.penerangan}</p>
+                          </div>
+                       </div>
+                       
+                       <!-- Back button -->
+                       <div class="mt-6">
+                            <a href="gallery.html" 
+                               class="inline-block bg-gray-800 text-white px-6 py-2 rounded shadow hover:bg-gray-700">
+                               Kembali
+                            </a>
+                       </div>
+                   </div>
+                   `;
+            } else {
+              document.getElementById("details").innerHTML = "<p class='text-red-500'>Item not found.</p>";
+            }
+
+                    /** Slideshow Logic **/
+        const images = Array.from({ length: totalImages }, (_, i) => `img/${baseName} (${i+1}).jpg`);
+        let currentIndex = 0;
+
+        const mainImage = document.getElementById("mainImage");
+        const modal = document.getElementById("slideshowModal");
+        const slideshowImage = document.getElementById("slideshowImage");
+        const closeBtn = document.getElementById("closeBtn");
+        const prevBtn = document.getElementById("prevBtn");
+        const nextBtn = document.getElementById("nextBtn");
+
+        // Open modal
+        mainImage.addEventListener("click", () => {
+          currentIndex = 0;
+          slideshowImage.src = images[currentIndex];
+          modal.classList.remove("hidden");
+          modal.classList.add("flex");
+        });
+
+        // Close modal
+        closeBtn.addEventListener("click", () => {
+          modal.classList.add("hidden");
+        });
+
+        // Next image
+        nextBtn.addEventListener("click", () => {
+          currentIndex = (currentIndex + 1) % images.length;
+          slideshowImage.src = images[currentIndex];
+        });
+
+        // Previous image
+        prevBtn.addEventListener("click", () => {
+          currentIndex = (currentIndex - 1 + images.length) % images.length;
+          slideshowImage.src = images[currentIndex];
+        });
+
+        // Close on background click
+        modal.addEventListener("click", (e) => {
+          if (e.target === modal) modal.classList.add("hidden");
+        });
+      });
+  </script>
+</body>
+</html>

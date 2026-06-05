@@ -1,0 +1,241 @@
+<?php
+
+use App\Models\Quiz;
+use function Livewire\Volt\{layout, state, with, usesFileUploads};
+
+layout('layouts.app'); 
+usesFileUploads();
+
+state([
+    'showModal' => false,
+    'editing' => null,
+    'question' => '',
+    'option_a' => '',
+    'option_b' => '',
+    'option_c' => '',
+    'option_d' => '',   
+    'correct_answer' => '',
+    'extras' => '',
+]);
+
+$edit = function (Quiz $quiz) {
+    $this->editing = $quiz->id;
+    $this->question = $quiz->question;
+
+    $this->option_a = $quiz->option_a;
+    $this->option_b = $quiz->option_b;
+    $this->option_c = $quiz->option_c;
+    $this->option_d = $quiz->option_d;
+    $this->correct_answer = $quiz->correct_answer;
+    $this->extras = $quiz->extras;
+
+    $this->showModal = true;
+};
+
+with([
+    'quizzes' => fn() => Quiz::latest()->get(),
+]);
+
+$save = function () {
+    $data = $this->validate([
+        'question' => 'required',
+        'option_a' => 'required',
+        'option_b' => 'required',
+        'option_c' => 'required', 
+        'option_d' => 'required', 
+        'correct_answer' => 'required',
+        'extras' => 'required',
+    ]);
+
+    $payload = [
+        'question' => $this->question,
+        'option_a' => $this->option_a,
+        'option_b' => $this->option_b,
+        'option_c' => $this->option_c,
+        'option_d' => $this->option_d,
+        'correct_answer' => $this->correct_answer,
+        'extras' => $this->extras,
+    ];
+
+    if ($this->editing) {
+        Quiz::find($this->editing)->update($payload);
+        session()->flash('message', 'Kuiz berjaya dikemaskini!');
+    } else {
+        // Simpan data baru
+        Quiz::create($payload);
+        session()->flash('message', 'Kuiz berjaya disimpan!');
+    }
+
+    $this->reset(); 
+    $this->showModal = false;
+    session()->flash('message', 'Kuiz berjaya disimpan!');
+};
+
+$openCreateModal = function() {
+    $this->reset(['editing', 'question', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_answer', 'extras']);
+    $this->showModal = true;
+}
+
+?>
+
+<div class="p-6">
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h2 class="text-2xl font-black text-gray-900">Senarai Kuiz</h2>
+            <p class="text-sm text-gray-500">Urus dan pantau semua kuiz anda di sini.</p>
+        </div>
+        <button wire:click="openCreateModal" class="flex items-center px-5 py-2.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-100">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+            </svg>
+            Tambah Kuiz
+        </button>
+    </div>
+
+    @if (session()->has('message'))
+        <div class="mb-4 p-4 bg-green-50 text-green-700 rounded-xl border border-green-100 font-bold">
+            {{ session('message') }}
+        </div>
+    @endif
+
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <table class="w-full text-left border-collapse">
+            <thead class="bg-gray-50/50">
+                <tr>
+                    <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest">Soalan & Pilihan</th>
+                    <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest text-center">Jawapan Betul</th>
+                    <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest text-center">Fakta Menarik</th>
+                    <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest text-right">Tindakan</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50 bg-white">
+                @forelse($quizzes as $quiz)
+                    <tr class="hover:bg-blue-50/30 transition-all duration-200 group">
+                        <td class="px-6 py-5">
+                            <div class="max-w-md">
+                                <div class="font-bold text-gray-900 mb-2 leading-snug line-clamp-3" title="{{ $quiz->question }}">
+                                    {{ $quiz->question }}
+                                </div>
+                                <div class="grid grid-cols-2 gap-x-4 gap-y-1">
+                                    <div class="text-m flex items-center gap-1.5">
+                                        <span class="font-black text-blue-500">A.</span>
+                                        <span class="text-gray-500 truncate" title="{{ $quiz->option_a }}">{{ $quiz->option_a }}</span>
+                                    </div>
+                                    <div class="text-m flex items-center gap-1.5">
+                                        <span class="font-black text-blue-500">B.</span>
+                                        <span class="text-gray-500 truncate" title="{{ $quiz->option_b }}">{{ $quiz->option_b }}</span>
+                                    </div>
+                                    <div class="text-m flex items-center gap-1.5">
+                                        <span class="font-black text-blue-500">C.</span>
+                                        <span class="text-gray-500 truncate" title="{{ $quiz->option_c }}">{{ $quiz->option_c }}</span>
+                                    </div>
+                                    <div class="text-m flex items-center gap-1.5">
+                                        <span class="font-black text-blue-500">D.</span>
+                                        <span class="text-gray-500 truncate" title="{{ $quiz->option_d }}">{{ $quiz->option_d }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+
+                        <td class="px-6 py-5 text-center uppercase">
+                            <span class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-green-50 text-green-600 font-black border border-green-100 shadow-sm">
+                                {{ $quiz->correct_answer }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-5 text-center">
+                                {{ $quiz->extras }}
+                        </td>
+
+
+                        <td class="px-6 py-5 text-right">
+                            <div class="flex justify-end gap-2">
+                                <button wire:click="edit({{ $quiz->id }})" 
+                                    class="p-2.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all active:scale-90"
+                                    title="Edit Soalan">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                    </svg>
+                                </button>
+
+                                <button wire:click="delete({{ $quiz->id }})" 
+                                    wire:confirm="Adakah anda pasti mahu memadam soalan ini?"
+                                    class="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all active:scale-90"
+                                    title="Padam Soalan">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="3" class="px-6 py-20 text-center">
+                            <div class="flex flex-col items-center">
+                                <div class="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mb-4 text-gray-300">
+                                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.364-6.364l-.707-.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M12 21V3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                                </div>
+                                <span class="text-gray-400 font-medium">Tiada soalan ditemui.</span>
+                            </div>
+                        </td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+
+    @if($showModal)
+        <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" wire:click="$set('showModal', false)"></div>
+                
+                <div class="inline-block align-bottom bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full p-8">
+                    <h3 class="text-xl font-black text-gray-900 mb-6">
+                        {{ $editing ? 'Kemaskini Kuiz' : 'Tambah Kuiz Baru' }}
+                    </h3>
+                    
+                    <form wire:submit.prevent="save" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-black text-gray-400 uppercase mb-1">Soalan</label>
+                            <textarea wire:model="question" rows="5" 
+                                class="w-full rounded-2xl border-gray-200 bg-gray-50 focus:border-blue-500 focus:ring-blue-500 p-4">
+                            </textarea>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-black text-gray-400 uppercase mb-1">Pilihan Jawapan A</label>
+                            <input type="text" wire:model="option_a" class="w-full rounded-xl border-gray-200 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-black text-gray-400 uppercase mb-1">Pilihan Jawapan B</label>
+                            <input type="text" wire:model="option_b" class="w-full rounded-xl border-gray-200 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-black text-gray-400 uppercase mb-1">Pilihan Jawapan C</label>
+                            <input type="text" wire:model="option_c" class="w-full rounded-xl border-gray-200 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-black text-gray-400 uppercase mb-1">Pilihan Jawapan D</label>
+                            <input type="text" wire:model="option_d" class="w-full rounded-xl border-gray-200 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-black text-gray-400 uppercase mb-1">Jawapan</label>
+                            <input type="text" wire:model="correct_answer" class="w-full rounded-xl border-gray-200 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-black text-gray-400 uppercase mb-1">Fakta Menarik</label>
+                             <textarea wire:model="extras" rows="5" 
+                                class="w-full rounded-2xl border-gray-200 bg-gray-50 focus:border-blue-500 focus:ring-blue-500 p-4">
+                            </textarea>
+
+                        </div>
+                        <div class="pt-4 flex gap-3">
+                            <button type="submit" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition">
+                                {{ $editing ? 'Simpan Perubahan' : 'Simpan Kuiz' }}                            </button>
+                            <button type="button" wire:click="$set('showModal', false)" class="flex-1 bg-gray-100 text-gray-600 py-3 rounded-xl font-bold hover:bg-gray-200 transition">Batal</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endif
+</div>
