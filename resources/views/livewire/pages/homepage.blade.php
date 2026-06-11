@@ -137,7 +137,7 @@ $checkAnswer = function ($key) {
                     <div class="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-green-500 transition">
                         <svg class="w-7 h-7 text-green-600 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 group-hover:text-white mb-2">Penyertaan</h3>
+                    <h3 class="text-xl font-bold text-gray-900 group-hover:text-white mb-2">Penyertaan Pertandingan</h3>
                     <p class="text-gray-500 group-hover:text-green-100 text-sm leading-relaxed">Sertai komuniti dengan menghantar inovasi anda sendiri.</p>
                 </div>
             </a>

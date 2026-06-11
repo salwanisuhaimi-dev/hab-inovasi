@@ -8,7 +8,7 @@ class Competition extends Model
 {
     protected $fillable = [
         'id',
-        'name', 
+        'name',
         'status',
         'slug',
         'description',
@@ -18,7 +18,8 @@ class Competition extends Model
         'requirements',
         'prizes',
         'categories',
-        'tracks'
+        'tracks',
+        'image_path'
     ];
 
     protected $casts = [

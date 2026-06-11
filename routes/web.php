@@ -20,6 +20,9 @@ Volt::route('/quiz', 'pages.quiz')->name('quiz');
 Volt::route('/entries', 'pages.entries')->name('entries');
 Volt::route('/publication', 'pages.publication')->name('publication');
 
+Volt::route('/testing', 'pages.testing')->name('testing');
+
+
 Volt::route('/faq', 'pages.faq')->name('faq');
 Volt::route('/overview/{competition:slug}', 'pages.overview')->name('overview');
 

@@ -94,7 +94,7 @@ $availableYears = computed(function () {
                 <div class="w-24 h-32 flex-shrink-0 bg-gradient-to-br {{ $coverGradient }} rounded-xl shadow-lg p-3 flex flex-col justify-between text-white relative overflow-hidden group-hover:scale-105 transition-transform duration-300">
                     <div class="absolute inset-y-0 left-0 w-1 bg-black/10"></div>
                     <div class="text-[10px] font-black tracking-widest opacity-80 uppercase">{{ $pub->type }}</div>
-                    <div class="text-2xl font-black opacity-40 select-none tracking-tighter">PDF</div>
+                    <div class="text-2xl font-black opacity-40 select-none tracking-tighter">DOC</div>
                     <div class="text-xs font-black tracking-tight leading-none bg-black/20 p-1.5 rounded text-center">
                         {{ $pub->year }}
                     </div>
@@ -139,10 +139,24 @@ $availableYears = computed(function () {
                                 </a>
                             @endforeach
                         </div>
-                    @else
-                        <span class="text-xs text-slate-300 italic font-medium">Tiada fail dilampirkan</span>
                     @endif
                 </div>
+
+                @if(!empty($pub->url))
+                    <a href="{{ Str::startsWith($pub->url, ['http://', 'https://']) ? $pub->url : 'https://' . $pub->url }}"
+                        target="_blank"
+                        class="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100/70 px-2.5 py-1.5 rounded-lg border border-red-100 transition-all max-w-[180px] truncate">
+
+                        <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+                        </svg>
+
+                        <span class="inline-block max-w-[200px] truncate" title="{{ $pub->url }}">
+                            {{ $pub->url }}
+                        </span>
+                    </a>
+                @endif
+
 
                 <!--<div class="absolute top-4 right-4 opacity-10 group-hover:opacity-30 transition-opacity hidden sm:block">
                     <svg class="w-8 h-8 text-slate-900" fill="currentColor" viewBox="0 0 20 20">

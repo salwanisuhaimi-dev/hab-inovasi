@@ -2,8 +2,10 @@
 
 use App\Models\Competition;
 use function Livewire\Volt\{layout, state, with, usesFileUploads};
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
-layout('layouts.app'); 
+layout('layouts.app');
 usesFileUploads();
 
 state([
@@ -19,9 +21,11 @@ state([
     'sub_objectives' => [['icon' => '💡', 'title' => '', 'desc' => '']],
     'prizes' => ['johan' => 0, 'naib_johan' => 0, 'ketiga' => 0],
     'requirements' => [['title' => '', 'desc' => '', 'is_allowed' => true]],
-    'tracks' => [''], 
+    'tracks' => [''],
     'categories' => [''],
     'emojis' => ['💡', '🤝', '🎯', '🚀', '📝', '🏆', '✨', '🔍', '⚙️', '📊'],
+    'image' => null,
+    'currentImage' => '',
 ]);
 
 $edit = function (Competition $competition) {
@@ -37,11 +41,13 @@ $edit = function (Competition $competition) {
 
     $this->main_objective = $competition->objectives['main'] ?? '';
     $this->sub_objectives = $competition->objectives['items'] ?? [['icon' => '💡', 'title' => '', 'desc' => '']];
-    
+
     $this->prizes = $competition->prizes ?? ['johan' => 0, 'naib_johan' => 0, 'ketiga' => 0];
     $this->requirements = $competition->requirements ?? [['title' => '', 'desc' => '', 'is_allowed' => true]];
     $this->tracks = $competition->tracks ?? [''];
     $this->categories = $competition->categories ?? [''];
+    $this->currentImage = $competition->image_path ?? '';
+    $this->image = null;
 
 };
 
@@ -67,6 +73,7 @@ $save = function () {
         'name' => 'required|string|max:255',
         'cycle' => 'required|integer',
         'main_objective' => 'required',
+        'image' => 'nullable|image|max:10240'
     ]);
 
     $payload = [
@@ -75,7 +82,7 @@ $save = function () {
         'description'   => $this->description,
         'introduction'  => $this->introduction,
         'cycle'         => $this->cycle,
-        
+
         'objectives'    => [
             'main'  => $this->main_objective,
             'items' => $this->sub_objectives
@@ -83,8 +90,48 @@ $save = function () {
         'requirements'  => $this->requirements,
         'prizes'        => $this->prizes,
         'tracks'        => $this->tracks,
-        'categories'    => $this->categories ?? [], // Jika ada
+        'categories'    => $this->categories ?? [],
     ];
+
+    // storage/app/public/competitions/
+
+    if ($this->image) {
+        $temporaryPath = $this->image->getRealPath();
+        $extension = strtolower($this->image->getClientOriginalExtension());
+
+        $filename = 'competitions/' . Str::random(40) . '.jpg'; // Saving as .jpg is best for compression
+        $absoluteStoragePath = storage_path('app/public/' . $filename);
+
+        if (!file_exists(dirname($absoluteStoragePath))) {
+            mkdir(dirname($absoluteStoragePath), 0755, true);
+        }
+
+        switch ($extension) {
+            case 'jpeg':
+            case 'jpg':
+                $sourceImage = @imagecreatefromjpeg($temporaryPath);
+                break;
+            case 'png':
+                $sourceImage = @imagecreatefrompng($temporaryPath);
+                break;
+            case 'webp':
+                $sourceImage = @imagecreatefromwebp($temporaryPath);
+                break;
+            default:
+                $sourceImage = false;
+        }
+
+        if ($sourceImage) {
+            imagejpeg($sourceImage, $absoluteStoragePath, 70);
+
+            imagedestroy($sourceImage);
+
+            $payload['image_path'] = $filename;
+        } else {
+            $path = $this->image->store('competitions', 'public');
+            $payload['image_path'] = $path;
+        }
+    }
 
     if ($this->editing) {
         Competition::find($this->editing)->update($payload);
@@ -94,23 +141,22 @@ $save = function () {
         session()->flash('message', 'Pertandingan berjaya disimpan!');
     }
 
-    $this->reset(); 
+    $this->reset();
     $this->showModal = false;
 };
 
 $openCreateModal = function() {
     $this->reset([
-        'editing', 'name', 'slug', 'description', 'introduction', 
-        'cycle', 'main_objective', 'sub_objectives', 'prizes', 
-        'requirements', 'tracks', 'categories',
+        'editing', 'name', 'slug', 'description', 'introduction',
+        'cycle', 'main_objective', 'sub_objectives', 'prizes',
+        'requirements', 'tracks', 'categories', 'image', 'currentImage'
     ]);
-    
-    // Set default value balik selepas reset
+
     $this->sub_objectives = [['icon' => '💡', 'title' => '', 'desc' => '']];
     $this->requirements = [['title' => '', 'desc' => '', 'is_allowed' => true]];
     $this->tracks = [''];
     $this->categories = [''];
-    
+
     $this->showModal = true;
 };
 ?>
@@ -155,15 +201,15 @@ $openCreateModal = function() {
                         </td>
                         <td class="px-6 py-4 text-right whitespace-nowrap">
                             <div class="flex justify-end gap-3">
-                                <button wire:click="edit({{ $competition->id }})" 
-                                    class="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors group" 
+                                <button wire:click="edit({{ $competition->id }})"
+                                    class="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors group"
                                     title="Edit Pertandingan">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                     </svg>
                                 </button>
 
-                                <button wire:click="delete({{ $competition->id }})" 
+                                <button wire:click="delete({{ $competition->id }})"
                                     wire:confirm="Adakah anda pasti mahu memadam pertandingan ini?"
                                     class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                     title="Padam Pertandingan">
@@ -172,7 +218,7 @@ $openCreateModal = function() {
                                     </svg>
                                 </button>
                             </div>
-                        </td>                    
+                        </td>
                     </tr>
                 @empty
                     <tr>
@@ -187,7 +233,7 @@ $openCreateModal = function() {
         <div class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
             <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
                 <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" wire:click="$set('showModal', false)"></div>
-                
+
                 <div class="inline-block align-bottom bg-white rounded-[2.5rem] text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full border-4 border-white">
                     <h3 class="text-xl font-black text-gray-900 mb-6 my-8 mx-8">
                         {{ $editing ? 'Kemaskini Pertandingan' : 'Tambah Pertandingan Baru' }}
@@ -227,7 +273,7 @@ $openCreateModal = function() {
                                 <label class="block text-[10px] font-black text-gray-400 uppercase mb-1 ml-2">Mesej Utama (Slogan Objektif)</label>
                                 <input type="text" wire:model="main_objective" class="w-full rounded-2xl border-gray-200 bg-white focus:ring-blue-500 shadow-sm" placeholder="Contoh: Meningkatkan produktiviti melalui sistem penyampaian kreatif">
                             </div>
-    
+
                             <div class="space-y-4">
                             @foreach($sub_objectives as $index => $obj)
                                 <div class="flex gap-4 items-start bg-white p-4 rounded-2xl shadow-sm border border-gray-100 relative group">
@@ -237,12 +283,12 @@ $openCreateModal = function() {
                                                 {{ $sub_objectives[$index]['icon'] ?: '💡' }}
                                             </span>
                                         </button>
-                                        <div x-show="open" 
+                                        <div x-show="open"
                                             @click.away="open = false" x-transition class="absolute z-[60] top-full left-0 mt-2 p-3 bg-white shadow-2xl rounded-2xl border border-gray-100 w-52" style="display: none;">
                                             <div class="grid grid-cols-4 gap-2">
                                                 @foreach($emojis as $emoji)
-                                                    <button 
-                                                        type="button" 
+                                                    <button
+                                                        type="button"
                                                         wire:click="$set('sub_objectives.{{ $index }}.icon', '{{ $emoji }}')"
                                                         @click="open = false"
                                                         class="w-10 h-10 flex items-center justify-center hover:bg-blue-50 rounded-lg text-xl transition-colors">
@@ -254,19 +300,19 @@ $openCreateModal = function() {
                                     </div>
 
                                     <div class="flex-1 grid grid-cols-1 gap-2">
-                                        <input type="text" 
-                                            wire:model="sub_objectives.{{ $index }}.title" 
-                                            class="w-full rounded-xl border-gray-200 text-sm font-bold focus:ring-blue-500" 
+                                        <input type="text"
+                                            wire:model="sub_objectives.{{ $index }}.title"
+                                            class="w-full rounded-xl border-gray-200 text-sm font-bold focus:ring-blue-500"
                                             placeholder="Tajuk Objektif (cth: Inovasi Kreatif)">
-                    
-                                        <input type="text" 
-                                            wire:model="sub_objectives.{{ $index }}.desc" 
-                                            class="w-full rounded-xl border-gray-200 text-xs text-gray-500 focus:ring-blue-500" 
+
+                                        <input type="text"
+                                            wire:model="sub_objectives.{{ $index }}.desc"
+                                            class="w-full rounded-xl border-gray-200 text-xs text-gray-500 focus:ring-blue-500"
                                             placeholder="Penerangan ringkas objektif...">
                                     </div>
 
-                                    <button type="button" 
-                                        wire:click="removeObjective({{ $index }})" 
+                                    <button type="button"
+                                        wire:click="removeObjective({{ $index }})"
                                         class="mt-3 p-2 text-red-300 hover:text-red-500 transition-colors"
                                     >
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="Wait, let's just use × for simplicity 😅">×</path></svg>
@@ -333,6 +379,45 @@ $openCreateModal = function() {
                             </section>
                         </div>
 
+                        <div class="mb-5">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-stone-500 mb-2">Poster / Gambar Pertandingan</label>
+                            <div class="flex flex-col items-center justify-center border-2 border-dashed border-stone-300 rounded-[2rem] p-6 bg-stone-50/50">
+                                @if ($image)
+                                <div class="relative w-40 h-40 mb-3">
+                                    <img src="{{ $image->temporaryUrl() }}" class="w-full h-full object-cover rounded-2xl shadow-md">
+                                </div>
+                                <span class="text-[10px] bg-amber-100 text-amber-800 px-3 py-0.5 rounded-full uppercase font-black tracking-wider">Previu Fail Baru</span>
+                                @elseif ($currentImage)
+                                <div class="relative w-40 h-40 mb-3">
+                                    <img src="{{ asset('storage/' . $currentImage) }}" class="w-full h-full object-cover rounded-2xl shadow-md">
+                                </div>
+                                <span class="text-[10px] bg-emerald-100 text-emerald-800 px-3 py-0.5 rounded-full uppercase font-black tracking-wider">Gambar Semasa</span>
+                                @else
+                                <div class="w-12 h-12 bg-stone-100 rounded-xl flex items-center justify-center text-stone-400 mb-3 text-xl">
+                                    🖼️
+                                </div>
+                                <p class="text-[11px] text-stone-400 uppercase font-black tracking-wider">Tiada Gambar Disertakan</p>
+                                @endif
+                          </div>
+                      </div>
+
+                      <div class="mb-6">
+                          <div class="relative">
+                              <input type="file" wire:model="image" id="comp_image_field" class="hidden" accept="image/*">
+                              <label for="comp_image_field" class="w-full bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold py-3 px-4 rounded-xl transition-all cursor-pointer block text-center text-xs border border-stone-300 shadow-sm">
+                                  {{ $image || $currentImage ? 'Tukar Pilihan Gambar' : 'Pilih Fail Gambar' }}
+                              </label>
+                          </div>
+
+                          <div wire:loading wire:target="image" class="text-[10px] text-orange-600 font-black italic animate-pulse text-center mt-2 block">
+                              Sedang memproses gambar sementara... ⏳
+                          </div>
+
+                          @error('image')
+                                <span class="text-xs text-red-600 font-bold mt-1 block pl-1">{{ $message }}</span>
+                            @enderror
+                      </div>
+
                         <div class="pt-6 border-t flex gap-3 sticky bottom-0 bg-white">
                             <button type="submit" class="flex-1 bg-blue-600 text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-blue-700 transition shadow-xl shadow-blue-200">
                                 {{ $editing ? 'Simpan Perubahan' : 'Tambah Pertandingan Baru' }}
@@ -341,7 +426,7 @@ $openCreateModal = function() {
                                 Batal
                             </button>
                         </div>
-                    </form>                
+                    </form>
                 </div>
             </div>
         </div>

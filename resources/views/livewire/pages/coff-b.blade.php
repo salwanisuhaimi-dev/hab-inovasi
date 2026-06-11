@@ -6,30 +6,40 @@ use function Livewire\Volt\{layout, state, computed, with};
 
 layout('layouts.landing');
 
-state(['openIndex' => null]);
-
-$toggle = function ($index) {
-    $this->openIndex = $this->openIndex === $index ? null : $index;
-};
-
-$ideas = computed(function () {
-    return CoffeeBreakIdea::query()
-        ->with(['session'])
-        ->inRandomOrder()
-        ->limit(5)
-        ->get();
-});
-
-$sessions = computed(function () {
-    return CoffeeBreakSession::latest()
-        ->get();
-});
+state([
+  'openIndex' => null,
+  'selectedDepartment' => '',
+]);
 
 with([
     'departments' => fn() => \App\Models\Department::orderBy('name')->get(),
 ]);
 
+$toggle = function ($index) {
+    $this->openIndex = $this->openIndex === $index ? null : $index;
+};
+
+
+$sessions = computed(function () {
+    return CoffeeBreakSession::latest()->get();
+});
+
+$ideas = computed(function () {
+    return CoffeeBreakIdea::query()
+        ->with(['session.department'])
+        ->when(!empty($this->selectedDepartment), function ($query) {
+            $query->whereHas('session', function ($q) {
+                $q->where('department_id', $this->selectedDepartment);
+            });
+        })
+        ->inRandomOrder()
+        ->limit(5)
+        ->get();
+});
+
 ?>
+
+<div>
 
 <style>
   .coffee-gradient-header {
@@ -47,297 +57,298 @@ with([
   }
 </style>
 
-<div class="min-h-screen bg-[#faf7f2] text-[#4a3728] font-sans pb-20 overflow-x-hidden">
-    <x-top-nav />
+    <div class="min-h-screen bg-[#faf7f2] text-[#4a3728] font-sans pb-20 overflow-x-hidden">
+        <x-top-nav />
 
-    <div class="fixed top-20 -left-10 opacity-20 rotate-45 pointer-events-none">
-        <span class="text-8xl">☕</span>
-    </div>
-    <div class="fixed bottom-10 -right-10 opacity-10 -rotate-12 pointer-events-none">
-        <span class="text-[120px]">🫘</span>
-    </div>
+        <div class="fixed top-20 -left-10 opacity-20 rotate-45 pointer-events-none">
+            <span class="text-8xl">☕</span>
+        </div>
+        <div class="fixed bottom-10 -right-10 opacity-10 -rotate-12 pointer-events-none">
+            <span class="text-[120px]">🫘</span>
+        </div>
 
-    <div class="max-w-7xl mx-auto px-6 py-10">
-        <header class="coffee-gradient-header rounded-[50px] p-10 md:p-16 mb-12 shadow-2xl border-4 border-white/20">
-            <div class="absolute top-0 right-0 w-96 h-96 bg-orange-500/10 rounded-full -mr-32 -mt-32 blur-[100px]"></div>
-            <div class="absolute bottom-0 left-0 w-64 h-64 bg-orange-900/20 rounded-full -ml-20 -mb-20 blur-[80px]"></div>
+        <div class="max-w-7xl mx-auto px-6 py-10">
+            <header class="coffee-gradient-header rounded-[50px] p-10 md:p-16 mb-12 shadow-2xl border-4 border-white/20">
+                <div class="absolute top-0 right-0 w-96 h-96 bg-orange-500/10 rounded-full -mr-32 -mt-32 blur-[100px]"></div>
+                <div class="absolute bottom-0 left-0 w-64 h-64 bg-orange-900/20 rounded-full -ml-20 -mb-20 blur-[80px]"></div>
 
-            <div class="absolute right-10 top-1/2 -translate-y-1/2 opacity-20 pointer-events-none hidden lg:block">
-                <svg width="200" height="200" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="1">
-                    <path d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"></path>
-                    <line x1="6" y1="1" x2="6" y2="4"></line>
-                    <line x1="10" y1="1" x2="10" y2="4"></line>
-                    <line x1="14" y1="1" x2="14" y2="4"></line>
-                </svg>
-            </div>
-
-            <div class="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-12">
-                <div class="lg:w-1/2 space-y-6 text-center lg:text-left">
-                    <div class="inline-flex items-center px-4 py-1.5 bg-orange-600/30 border border-orange-500/40 rounded-full shadow-inner">
-                        <span class="text-orange-300 text-[10px] font-black uppercase tracking-[0.3em]">Pembudayaan Keseronokan Bekerja</span>
-                    </div>
-
-                    <h1 class="text-5xl md:text-7xl font-black leading-[1.1] font-serif flex flex-col lg:flex-row lg:items-center gap-6">
-                        <div class="relative flex-shrink-0 animate-float">
-                            <div class="absolute -top-10 left-1/2 -translate-x-1/2 flex space-x-2 opacity-50 pointer-events-none">
-                                <div class="w-1 h-10 bg-white/20 rounded-full blur-md animate-steam-slow"></div>
-                                <div class="w-1.5 h-14 bg-white/10 rounded-full blur-md animate-steam-slow" style="animation-delay: 0.5s;"></div>
-                            </div>
-
-                            <img src="/images/coffee_idea.png"
-                                alt="Coffee Mug"
-                                class="w-18 h-18 md:w-36 md:h-36 object-contain drop-shadow-[0_20px_30px_rgba(0,0,0,0.6)] hover:scale-110 transition-transform duration-500"
-                                style="transform: rotate(-8deg); filter: brightness(1.05) contrast(1.1);">
-                        </div>
-
-                        <style>
-                            @keyframes float {
-                                0%, 100% { transform: translateY(0px) rotate(-8deg); }
-                                50% { transform: translateY(-10px) rotate(-6deg); }
-                            }
-                            .animate-float {
-                                animation: float 4s ease-in-out infinite;
-                            }
-
-                            @keyframes steam-slow {
-                                0% { transform: translateY(0) scaleX(1); opacity: 0; }
-                                50% { opacity: 0.5; }
-                                100% { transform: translateY(-40px) scaleX(2); opacity: 0; }
-                            }
-                            .animate-steam-slow {
-                                animation: steam-slow 3s infinite ease-out;
-                            }
-                        </style>
-                        <div class="relative">
-                            <span style="color: #fdf8f5;">The Coffee</span> <br/>
-                            <span class="text-orange-500 italic">Break</span>
-                            <span style="color: #ede0d4;">Session.</span>
-                        </div>
-                    </h1>
-
-                    <p style="color: #a8a29e;" class="text-lg font-medium italic max-w-sm">
-                        Platform perbincangan santai dan sesi sumbang saran idea di peringkat Bahagian bagi semua warga JPA.
-                    </p>
+                <div class="absolute right-10 top-1/2 -translate-y-1/2 opacity-20 pointer-events-none hidden lg:block">
+                    <svg width="200" height="200" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="1">
+                        <path d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"></path>
+                        <line x1="6" y1="1" x2="6" y2="4"></line>
+                        <line x1="10" y1="1" x2="10" y2="4"></line>
+                        <line x1="14" y1="1" x2="14" y2="4"></line>
+                    </svg>
                 </div>
 
-                <div class="lg:w-1/2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div class="p-6 rounded-[2rem] border border-white/10" style="background-color: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px);">
-                        <div class="w-10 h-10 bg-orange-600 rounded-2xl flex items-center justify-center text-white font-bold mb-4 shadow-lg rotate-3">1</div>
-                        <h3 class="text-orange-400 font-black text-sm mb-1 uppercase">Idea Inovasi</h3>
-                        <p style="color: #d6d3d1;" class="text-[16px] leading-relaxed">Penambahbaikan Proses Kerja.</p>
-                    </div>
-
-                    <div class="p-6 rounded-[2rem] border border-white/10" style="background-color: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px);">
-                        <div class="w-10 h-10 bg-[#4a3728] rounded-2xl flex items-center justify-center text-orange-400 font-bold mb-4 shadow-lg -rotate-3 border border-orange-900/50">2</div>
-                        <h3 class="text-orange-400 font-black text-sm mb-1 uppercase">Idea Selain Inovasi</h3>
-                        <p style="color: #d6d3d1;" class="text-[16px] leading-relaxed">Kesejahteraan dan kerja berpasukan.</p>
-                    </div>
-
-                    <div class="p-6 rounded-[2rem] border border-white/10 sm:col-span-2 flex items-center gap-6" style="background-color: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px);">
-                        <div class="w-12 h-12 bg-orange-600 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xl">✨</div>
-                        <div>
-                            <h3 class="text-orange-400 font-black text-sm mb-0.5 uppercase tracking-widest">Mewujudkan Ruang Kondusif dan Kreatif</h3>
-                            <p style="color: #d6d3d1;" class="text-[14px] font-bold">Menggalakkan percambahan idea baharu tanpa kekangan birokrasi dalam suasana santai.</p>
+                <div class="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-12">
+                    <div class="lg:w-1/2 space-y-6 text-center lg:text-left">
+                        <div class="inline-flex items-center px-4 py-1.5 bg-orange-600/30 border border-orange-500/40 rounded-full shadow-inner">
+                            <span class="text-orange-300 text-[10px] font-black uppercase tracking-[0.3em]">Pembudayaan Keseronokan Bekerja</span>
                         </div>
-                    </div>
-                    <div class="p-6 rounded-[2rem] border border-white/10 sm:col-span-2 flex items-center gap-6" style="background-color: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px);">
-                        <div class="w-12 h-12 bg-orange-600 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xl">✨</div>
-                        <div>
-                            <h3 class="text-orange-400 font-black text-sm mb-0.5 uppercase tracking-widest">Memperkasa komunikasi dua hala</h3>
-                            <p style="color: #d6d3d1;" class="text-[14px] font-bold">Meningkatkan interaksi antara pengurusan dan warga JPA tanpa jurang hierarki.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </header>
 
-        <div class="grid lg:grid-cols-12 gap-10">
-            <div class="lg:col-span-4 space-y-10">
-                <!-- LIST COFF B SESSIONS -->
-                <section class="bg-[#efebe9] rounded-[32px] p-8 border border-stone-200">
-                    <h3 class="text-lg font-bold mb-6 flex items-center gap-2">
-                        <!--<span class="bg-[#3e2723] text-white p-1 rounded-md text-xs italic">Akan Datang</span>--> Sesi Coff-B
-                    </h3>
-                    <div class="space-y-4">
-                        @forelse($this->sessions as $session)
-                        <div class="group flex items-center gap-4 p-3 hover:bg-white rounded-2xl transition-all cursor-default">
-                            <div class="bg-white group-hover:bg-orange-600 group-hover:text-white w-12 h-12 rounded-xl flex flex-col items-center justify-center shadow-sm transition-colors">
-                                <span class="text-[10px] font-bold">
-                                    {{ \Carbon\Carbon::parse($session->date_created)->format('M') }}
-                                </span>
-                                <span class="text-lg font-black leading-none text-orange-600 group-hover:text-white">
-                                    {{ \Carbon\Carbon::parse($session->date_created)->format('d') }}
-                                </span>
-                            </div>
-                            <div>
-                                <h4 class="text-sm font-bold text-stone-800">{{ $session->department->name }}</h4>
-                                <p class="text-[10px] text-stone-500 uppercase">{{ \Carbon\Carbon::parse($session->start_time)->format('h:i A') }} • {{$session->location}}</p>
-                            </div>
-                        </div>
-                        @empty
-                        <div class="py-12 flex flex-col items-center justify-center border-2 border-dashed border-stone-300 rounded-[24px] opacity-60">
-                            <svg class="w-10 h-10 text-stone-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M18.5 8V18a2 2 0 0 1-2 2h-10a2 2 0 0 1-2-2V8M15 11v-4a3 3 0 0 0-6 0v4M2 8h20" />
-                            </svg>
-                            <p class="text-[10px] font-black uppercase tracking-[0.2em] text-stone-500 italic">Tiada Sesi Dijadualkan</p>
-                            <p class="text-[9px] text-stone-400 mt-1 uppercase">Sila semak semula kemudian</p>
-                        </div>
-                        @endforelse
-                    </div>
-                </section>
-
-                <!-- LEAVE A REVIEW SECTION -->
-                <section class="bg-white rounded-[32px] p-8 shadow-xl shadow-stone-200 border border-stone-100 relative overflow-hidden">
-                    <div class="absolute top-0 left-0 w-2 h-full bg-orange-600"></div>
-                    <h2 class="text-2xl font-bold mb-2"><i>Leave a review</i></h2>
-                    <p class="text-stone-400 text-xs mb-6 font-medium tracking-widest italic">Tinggalkan maklum balas anda...</p>
-
-                    <form class="space-y-4">
-                        <input type="text" placeholder="Nama Penuh" class="w-full p-4 rounded-2xl bg-[#faf7f2] border-none focus:ring-2 focus:ring-orange-600 outline-none text-sm placeholder:text-stone-400 transition-all">
-                        <textarea rows="4" placeholder="Kongsikan sesuatu..." class="w-full p-4 rounded-2xl bg-[#faf7f2] border-none focus:ring-2 focus:ring-orange-600 outline-none text-sm placeholder:text-stone-400 transition-all"></textarea>
-
-                        <button class="w-full bg-[#3e2723] hover:bg-orange-700 text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-stone-300 flex items-center justify-center gap-2 group">
-                            <span>Hantar</span>
-                            <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M14 5l7 7m0 0l-7 7m7-7H3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        </button>
-                    </form>
-                </section>
-
-                <!-- REVIEWS SECTION-->
-                <section class="mt-12 space-y-6">
-                    <div class="flex items-center justify-between px-4">
-                        <h3 class="text-xl font-black text-stone-800 uppercase italic tracking-tighter">Maklum Balas Terkini</h3>
-                        <span class="text-[10px] font-black bg-orange-100 text-orange-700 px-3 py-1 rounded-full uppercase tracking-widest">3 Komen</span>
-                    </div>
-
-                    <div class="space-y-4">
-                        <div class="bg-white p-6 rounded-[32px] border border-stone-100 shadow-sm hover:shadow-md transition-all group">
-                            <div class="flex items-center gap-4 mb-4">
-                                <div class="w-10 h-10 rounded-xl bg-[#faf7f2] flex items-center justify-center text-stone-700 font-black text-xs shadow-inner uppercase">
-                                    NA
+                        <h1 class="text-5xl md:text-7xl font-black leading-[1.1] font-serif flex flex-col lg:flex-row lg:items-center gap-6">
+                            <div class="relative flex-shrink-0 animate-float">
+                                <div class="absolute -top-10 left-1/2 -translate-x-1/2 flex space-x-2 opacity-50 pointer-events-none">
+                                    <div class="w-1 h-10 bg-white/20 rounded-full blur-md animate-steam-slow"></div>
+                                    <div class="w-1.5 h-14 bg-white/10 rounded-full blur-md animate-steam-slow" style="animation-delay: 0.5s;"></div>
                                 </div>
-                                <div class="flex-1">
-                                    <h4 class="text-sm font-black text-stone-800 uppercase italic leading-none">Nurul Ain</h4>
-                                    <span class="text-[9px] text-stone-400 font-bold uppercase tracking-widest">2 Jam yang lalu</span>
-                                </div>
-                                <div class="flex gap-0.5 text-orange-500">
-                                    <span>★</span><span>★</span><span>★</span><span>★</span><span class="text-stone-200">★</span>
-                                </div>
+
+                                <img src="/images/coffee_idea.png"
+                                    alt="Coffee Mug"
+                                    class="w-18 h-18 md:w-36 md:h-36 object-contain drop-shadow-[0_20px_30px_rgba(0,0,0,0.6)] hover:scale-110 transition-transform duration-500"
+                                    style="transform: rotate(-8deg); filter: brightness(1.05) contrast(1.1);">
                             </div>
-                            <p class="text-stone-600 text-sm leading-relaxed italic border-l-2 border-orange-100 pl-4">
-                                "Sesi Coff-B kali ini sangat informatif! Idea dashboard tu memang kena dengan keperluan jabatan kami sekarang."
-                            </p>
-                        </div>
-                        <div class="bg-white p-6 rounded-[32px] border border-stone-100 shadow-sm hover:shadow-md transition-all group">
-                            <div class="flex items-center gap-4 mb-4">
-                                <div class="w-10 h-10 rounded-xl bg-[#faf7f2] flex items-center justify-center text-stone-700 font-black text-xs shadow-inner uppercase">
-                                    RH
-                                </div>
-                                <div class="flex-1">
-                                    <h4 class="text-sm font-black text-stone-800 uppercase italic leading-none">Razif Hamdan</h4>
-                                    <span class="text-[9px] text-stone-400 font-bold uppercase tracking-widest">5 Jam yang lalu</span>
-                                </div>
-                                <div class="flex gap-0.5 text-orange-500">
-                                    <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
-                                </div>
+
+                            <style>
+                                @keyframes float {
+                                    0%, 100% { transform: translateY(0px) rotate(-8deg); }
+                                    50% { transform: translateY(-10px) rotate(-6deg); }
+                                }
+                                .animate-float {
+                                    animation: float 4s ease-in-out infinite;
+                                }
+
+                                @keyframes steam-slow {
+                                    0% { transform: translateY(0) scaleX(1); opacity: 0; }
+                                    50% { opacity: 0.5; }
+                                    100% { transform: translateY(-40px) scaleX(2); opacity: 0; }
+                                }
+                                .animate-steam-slow {
+                                    animation: steam-slow 3s infinite ease-out;
+                                }
+                            </style>
+                            <div class="relative">
+                                <span style="color: #fdf8f5;">The Coffee</span> <br/>
+                                <span class="text-orange-500 italic">Break</span>
+                                <span style="color: #ede0d4;">Session.</span>
                             </div>
-                            <p class="text-stone-600 text-sm leading-relaxed italic border-l-2 border-orange-100 pl-4">
-                                "Terbaik! Suka tengok suasana perbincangan yang santai tapi penuh dengan input inovasi."
-                            </p>
-                        </div>
+                        </h1>
 
-                        <!--<div class="py-6 text-center">
-                            <button class="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em] hover:text-orange-600 transition">
-                                Lihat Semua Maklum Balas ↓
-                            </button>
-                        </div>-->
-                    </div>
-                </section>
-
-            </div>
-
-            <div class="lg:col-span-8">
-                <div class="flex items-end justify-between mb-8 px-4">
-                    <div>
-                        <h2 class="text-3xl font-black text-stone-800 italic">Ruang Cetusan Idea</h2>
-                        <p class="text-stone-500 text-sm italic font-serif">Apa yang menarik baru-baru ni...</p>
-                    </div>
-                    <div class="flex gap-2">
-                        <div class="h-10 w-10 rounded-full bg-white border border-stone-200 flex items-center justify-center text-stone-400 cursor-pointer hover:bg-stone-50 shadow-sm"><</div>
-                        <div class="h-10 w-10 rounded-full bg-white border border-stone-200 flex items-center justify-center text-stone-400 cursor-pointer hover:bg-stone-50 shadow-sm">></div>
-                    </div>
-                </div>
-
-                <div class="mb-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div class="relative" x-data="{ open: false }" class="w-full sm:w-72">
-                        <label class="block text-[9px] font-black text-stone-400 uppercase tracking-[0.2em] mb-2 ml-1"> tapis mengikut bahagian </label>
-                        <div class="relative">
-                            <select wire:model="filterBahagian"
-                                class="w-full appearance-none bg-white border border-stone-100 text-stone-700 text-xs font-bold py-3.5 px-5 pr-10 rounded-[20px] shadow-sm focus:outline-none focus:border-orange-300 focus:ring-4 focus:ring-orange-50 transition-all cursor-pointer">
-                                <option value="semua">Semua Bahagian (Keseluruhan)</option>
-                                <option value="bkp">Bahagian Khidmat Pengurusan</option>
-                                <option value="bpi">Bahagian Pembangunan Inovasi</option>
-                                <option value="bk">Bahagian Korporat</option>
-                            </select>
-
-                        </div>
-                    </div>
-
-                    <div class="flex items-center gap-3 self-end sm:self-center">
-                        <div class="text-right">
-                            <span class="block text-[9px] font-black text-stone-400 uppercase tracking-widest leading-none">Jumlah Idea</span>
-                            <span class="text-xl font-black text-stone-900">{{ count($this->ideas) }}</span>
-                        </div>
-                        <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="grid sm:grid-cols-2 gap-6">
-                    @forelse($this->ideas as $idea)
-                    <div class="bg-white p-8 rounded-[40px] shadow-sm hover:shadow-xl transition-all border border-stone-100 relative group">
-                        <div class="absolute top-6 right-8 opacity-20 group-hover:opacity-100 transition-opacity">
-                            <span class="text-2xl">⚡️</span>
-                        </div>
-                        <div class="flex items-center gap-3 mb-6">
-                            <div class="w-12 h-12 rounded-2xl bg-orange-100 flex items-center justify-center text-orange-700 font-black shadow-inner">
-                                @php
-                                    $name = $idea->session->user->name ?? 'User';
-                                    $words = explode(' ', $name);
-                                    $initials = strtoupper(substr($words[0], 0, 1) . (isset($words[1]) ? substr($words[1], 0, 1) : ''));
-                                @endphp
-
-                                {{ $initials }}
-                            </div>
-                            <div>
-                                <h4 class="text-sm font-black text-stone-800 uppercase">{{ $idea->session->user->name }}</h4>
-                                <span class="text-[9px] bg-stone-100 px-2 py-0.5 rounded text-stone-500 uppercase font-bold tracking-widest">{{ $idea->session->user->department->name }}</span>
-                            </div>
-                        </div>
-                        <p class="text-stone-600 text-sm leading-relaxed italic border-l-4 border-orange-100 pl-4 font-serif">
-                            "{{$idea->suggestion}}"
+                        <p style="color: #a8a29e;" class="text-lg font-medium italic max-w-sm">
+                            Platform perbincangan santai dan sesi sumbang saran idea di peringkat Bahagian bagi semua warga JPA.
                         </p>
                     </div>
-                    @empty
-                    <div class="sm:col-span-2 py-20 flex flex-col items-center justify-center bg-stone-50/50 border-2 border-dashed border-stone-200 rounded-[40px]">
-                        <div class="relative mb-6">
-                            <div class="w-16 h-16 bg-white rounded-3xl flex items-center justify-center shadow-sm text-stone-300">
-                                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                                </svg>
-                            </div>
-                            <div class="absolute -top-2 -right-2 w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center text-[10px]">💤</div>
+
+                    <div class="lg:w-1/2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="p-6 rounded-[2rem] border border-white/10" style="background-color: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px);">
+                            <div class="w-10 h-10 bg-orange-600 rounded-2xl flex items-center justify-center text-white font-bold mb-4 shadow-lg rotate-3">1</div>
+                            <h3 class="text-orange-400 font-black text-sm mb-1 uppercase">Idea Inovasi</h3>
+                            <p style="color: #d6d3d1;" class="text-[16px] leading-relaxed">Penambahbaikan Proses Kerja.</p>
                         </div>
 
-                        <h3 class="text-stone-800 font-black uppercase tracking-widest text-xs">Belum Ada Idea Coff-B</h3>
-                        <p class="text-stone-400 text-[10px] mt-2 italic uppercase tracking-tighter">Sesi sedang berlangsung atau belum ada idea direkodkan.</p>
+                        <div class="p-6 rounded-[2rem] border border-white/10" style="background-color: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px);">
+                            <div class="w-10 h-10 bg-[#4a3728] rounded-2xl flex items-center justify-center text-orange-400 font-bold mb-4 shadow-lg -rotate-3 border border-orange-900/50">2</div>
+                            <h3 class="text-orange-400 font-black text-sm mb-1 uppercase">Idea Selain Inovasi</h3>
+                            <p style="color: #d6d3d1;" class="text-[16px] leading-relaxed">Kesejahteraan dan kerja berpasukan.</p>
+                        </div>
+
+                        <div class="p-6 rounded-[2rem] border border-white/10 sm:col-span-2 flex items-center gap-6" style="background-color: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px);">
+                            <div class="w-12 h-12 bg-orange-600 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xl">✨</div>
+                            <div>
+                                <h3 class="text-orange-400 font-black text-sm mb-0.5 uppercase tracking-widest">Mewujudkan Ruang Kondusif dan Kreatif</h3>
+                                <p style="color: #d6d3d1;" class="text-[14px] font-bold">Menggalakkan percambahan idea baharu tanpa kekangan birokrasi dalam suasana santai.</p>
+                            </div>
+                        </div>
+                        <div class="p-6 rounded-[2rem] border border-white/10 sm:col-span-2 flex items-center gap-6" style="background-color: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px);">
+                            <div class="w-12 h-12 bg-orange-600 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xl">✨</div>
+                            <div>
+                                <h3 class="text-orange-400 font-black text-sm mb-0.5 uppercase tracking-widest">Memperkasa komunikasi dua hala</h3>
+                                <p style="color: #d6d3d1;" class="text-[14px] font-bold">Meningkatkan interaksi antara pengurusan dan warga JPA tanpa jurang hierarki.</p>
+                            </div>
+                        </div>
                     </div>
-                    @endforelse
+                </div>
+            </header>
+
+            <div class="grid lg:grid-cols-12 gap-10">
+                <div class="lg:col-span-4 space-y-10">
+                    <section class="bg-[#efebe9] rounded-[32px] p-8 border border-stone-200">
+                        <h3 class="text-lg font-bold mb-6 flex items-center gap-2">Sesi Coff-B</h3>
+                        <div class="space-y-4">
+                            @forelse($this->sessions as $session)
+                            <div class="group flex items-center gap-4 p-3 hover:bg-white rounded-2xl transition-all cursor-default">
+                                <div class="bg-white group-hover:bg-orange-600 group-hover:text-white w-12 h-12 rounded-xl flex flex-col items-center justify-center shadow-sm transition-colors">
+                                    <span class="text-[10px] font-bold">
+                                        {{ \Carbon\Carbon::parse($session->date_created)->format('M') }}
+                                    </span>
+                                    <span class="text-lg font-black leading-none text-orange-600 group-hover:text-white">
+                                        {{ \Carbon\Carbon::parse($session->date_created)->format('d') }}
+                                    </span>
+                                </div>
+                                <div>
+                                    <h4 class="text-sm font-bold text-stone-800">{{ $session->department->name ?? 'N/A' }}</h4>
+                                    <p class="text-[10px] text-stone-500 uppercase">{{ \Carbon\Carbon::parse($session->start_time)->format('h:i A') }} • {{$session->location}}</p>
+                                </div>
+                            </div>
+                            @empty
+                            <div class="py-12 flex flex-col items-center justify-center border-2 border-dashed border-stone-300 rounded-[24px] opacity-60">
+                                <svg class="w-10 h-10 text-stone-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M18.5 8V18a2 2 0 0 1-2 2h-10a2 2 0 0 1-2-2V8M15 11v-4a3 3 0 0 0-6 0v4M2 8h20" />
+                                </svg>
+                                <p class="text-[10px] font-black uppercase tracking-[0.2em] text-stone-500 italic">Tiada Sesi Dijadualkan</p>
+                                <p class="text-[9px] text-stone-400 mt-1 uppercase">Sila semak semula kemudian</p>
+                            </div>
+                            @endforelse
+                        </div>
+                    </section>
+
+                    <section class="bg-white rounded-[32px] p-8 shadow-xl shadow-stone-200 border border-stone-100 relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-2 h-full bg-orange-600"></div>
+                        <h2 class="text-2xl font-bold mb-2"><i>Leave a review</i></h2>
+                        <p class="text-stone-400 text-xs mb-6 font-medium tracking-widest italic">Tinggalkan maklum balas anda...</p>
+
+                        <form class="space-y-4">
+                            <input type="text" placeholder="Nama Penuh" class="w-full p-4 rounded-2xl bg-[#faf7f2] border-none focus:ring-2 focus:ring-orange-600 outline-none text-sm placeholder:text-stone-400 transition-all">
+                            <textarea rows="4" placeholder="Kongsikan sesuatu..." class="w-full p-4 rounded-2xl bg-[#faf7f2] border-none focus:ring-2 focus:ring-orange-600 outline-none text-sm placeholder:text-stone-400 transition-all"></textarea>
+
+                            <button type="button" class="w-full bg-[#3e2723] hover:bg-orange-700 text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-stone-300 flex items-center justify-center gap-2 group">
+                                <span>Hantar</span>
+                                <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M14 5l7 7m0 0l-7 7m7-7H3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </button>
+                        </form>
+                    </section>
+
+                    <section class="mt-12 space-y-6">
+                        <div class="flex items-center justify-between px-4">
+                            <h3 class="text-xl font-black text-stone-800 uppercase italic tracking-tighter">Maklum Balas Terkini</h3>
+                            <span class="text-[10px] font-black bg-orange-100 text-orange-700 px-3 py-1 rounded-full uppercase tracking-widest">3 Komen</span>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div class="bg-white p-6 rounded-[32px] border border-stone-100 shadow-sm hover:shadow-md transition-all group">
+                                <div class="flex items-center gap-4 mb-4">
+                                    <div class="w-10 h-10 rounded-xl bg-[#faf7f2] flex items-center justify-center text-stone-700 font-black text-xs shadow-inner uppercase">NA</div>
+                                    <div class="flex-1">
+                                        <h4 class="text-sm font-black text-stone-800 uppercase italic leading-none">Nurul Ain</h4>
+                                        <span class="text-[9px] text-stone-400 font-bold uppercase tracking-widest">2 Jam yang lalu</span>
+                                    </div>
+                                    <div class="flex gap-0.5 text-orange-500">
+                                        <span>★</span><span>★</span><span>★</span><span>★</span><span class="text-stone-200">★</span>
+                                    </div>
+                                </div>
+                                <p class="text-stone-600 text-sm leading-relaxed italic border-l-2 border-orange-100 pl-4">
+                                    "Sesi Coff-B kali ini sangat informatif! Idea dashboard tu memang kena dengan keperluan jabatan kami sekarang."
+                                </p>
+                            </div>
+                            <div class="bg-white p-6 rounded-[32px] border border-stone-100 shadow-sm hover:shadow-md transition-all group">
+                                <div class="flex items-center gap-4 mb-4">
+                                    <div class="w-10 h-10 rounded-xl bg-[#faf7f2] flex items-center justify-center text-stone-700 font-black text-xs shadow-inner uppercase">RH</div>
+                                    <div class="flex-1">
+                                        <h4 class="text-sm font-black text-stone-800 uppercase italic leading-none">Razif Hamdan</h4>
+                                        <span class="text-[9px] text-stone-400 font-bold uppercase tracking-widest">5 Jam yang lalu</span>
+                                    </div>
+                                    <div class="flex gap-0.5 text-orange-500">
+                                        <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+                                    </div>
+                                </div>
+                                <p class="text-stone-600 text-sm leading-relaxed italic border-l-2 border-orange-100 pl-4">
+                                    "Terbaik! Suka tengok suasana perbincangan yang santai tapi penuh dengan input inovasi."
+                                </p>
+                            </div>
+                        </div>
+                    </section>
                 </div>
 
+                <div class="lg:col-span-8">
+                    <div class="flex items-end justify-between mb-8 px-4">
+                        <div>
+                            <h2 class="text-3xl font-black text-stone-800 italic">Ruang Cetusan Idea</h2>
+                            <p class="text-stone-500 text-sm italic font-serif">Apa yang menarik baru-baru ni...</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <div class="h-10 w-10 rounded-full bg-white border border-stone-200 flex items-center justify-center text-stone-400 cursor-pointer hover:bg-stone-50 shadow-sm">&lt;</div>
+                            <div class="h-10 w-10 rounded-full bg-white border border-stone-200 flex items-center justify-center text-stone-400 cursor-pointer hover:bg-stone-50 shadow-sm">&gt;</div>
+                        </div>
+                    </div>
+
+                    <div class="mb-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div class="w-full sm:w-72">
+                            <label class="block text-[9px] font-black text-stone-400 uppercase tracking-[0.2em] mb-2 ml-1">
+                                Tapis Mengikut Bahagian
+                            </label>
+                            <div class="relative">
+                                <select wire:model.live="selectedDepartment" id="department_filter"
+                                    class="w-full bg-white border border-stone-200 text-stone-700 text-xs font-bold py-3.5 px-5 rounded-[20px] focus:outline-none focus:border-orange-300 focus:ring-4 focus:ring-orange-50 transition-all cursor-pointer shadow-sm">
+                                    <option value="">Semua Bahagian (Keseluruhan)</option>
+                                    @foreach($departments as $dept)
+                                        <option value="{{ $dept->id }}" wire:key="filter-dept-{{ $dept->id }}">
+                                            {{ $dept->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-3 self-end sm:self-center">
+                            <div class="text-right">
+                                <span class="block text-[9px] font-black text-stone-400 uppercase tracking-widest leading-none">Jumlah Idea</span>
+                                <span class="text-xl font-black text-stone-900">{{ count($this->ideas) }}</span>
+                            </div>
+                            <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid sm:grid-cols-2 gap-6" wire:key="ideas-section-{{ $selectedDepartment }}">
+                        @forelse($this->ideas as $idea)
+                            <div x-data="{ open: false }" wire:key="idea-card-{{ $idea->id }}" class="bg-white p-6 rounded-2xl shadow-sm hover:shadow-md transition-all border border-stone-200 flex flex-col justify-between group">
+                                <div class="flex items-center justify-between mb-4">
+                                    <div class="flex items-center gap-3">
+                                        @php
+                                            $deptCode = $idea->session->department->code ?? 'N/A';
+                                        @endphp
+                                        <div>
+                                            <h4 class="text-base font-bold text-stone-800">{{ $deptCode }}</h4>
+                                        </div>
+                                    </div>
+                                    <span class="text-xl opacity-40 group-hover:opacity-100 transition-opacity">💡</span>
+                                </div>
+
+                                <h3 class="text-base font-black text-stone-900 mb-3 leading-snug transition-colors break-words">
+                                    {{ $idea->title ?? 'N/A' }}
+                                </h3>
+
+                                <div class="flex items-center gap-2 my-3">
+                                    <span class="text-[10px] font-bold text-orange-600 uppercase tracking-wider whitespace-nowrap">Cadangan:</span>
+                                    <div class="w-full h-[1px] bg-stone-100"></div>
+                                </div>
+                                <div class="relative flex-grow mb-4">
+                                    <p :class="open ? '' : 'line-clamp-3'" class="text-stone-600 text-sm leading-relaxed font-sans">
+                                        {{ $idea->suggestion }}
+                                    </p>
+                                </div>
+
+                                <div class="border-t border-stone-100 pt-3 flex justify-end">
+                                    <button @click="open = !open" type="button" class="text-xs font-bold text-orange-600 hover:text-orange-700 transition-colors flex items-center gap-1">
+                                        <span x-text="open ? 'Sembunyikan' : 'Baca Penuh'"></span>
+                                        <svg xmlns="http://www.w3.org/2000/svg" :class="open ? 'rotate-180' : ''" class="h-3 w-3 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="sm:col-span-2 py-20 flex flex-col items-center justify-center bg-stone-50/50 border-2 border-dashed border-stone-200 rounded-[40px]">
+                                <div class="relative mb-6">
+                                    <div class="w-16 h-16 bg-white rounded-3xl flex items-center justify-center shadow-sm text-stone-300">
+                                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                        </svg>
+                                    </div>
+                                    <div class="absolute -top-2 -right-2 w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center text-[10px]">💤</div>
+                                </div>
+
+                                <h3 class="text-stone-800 font-black uppercase tracking-widest text-xs">Belum Ada Idea Coff-B</h3>
+                                <p class="text-stone-400 text-[10px] mt-2 italic uppercase tracking-tighter">Sesi sedang berlangsung atau belum ada idea direkodkan.</p>
+                            </div>
+                        @endforelse
+                    </div>
+
+                </div>
             </div>
         </div>
     </div>

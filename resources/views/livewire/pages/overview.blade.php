@@ -57,7 +57,7 @@ $toggle = function ($index) {
 
             </div>
         </header>
-        
+
         <div class="max-w-7xl mx-auto px-6 my-8">
             <div class="grid lg:grid-cols-3 gap-8 mb-16">
                 <div class="lg:col-span-2 bg-white p-10 rounded-[3rem] shadow-sm border border-gray-100">
@@ -70,7 +70,7 @@ $toggle = function ($index) {
                         </p>
                     </div>
                 </div>
-            
+
                 <div class="bg-gradient-to-br from-blue-900 to-blue-800 p-10 rounded-[3rem] text-white flex flex-col justify-center shadow-xl">
                     <div class="text-sm font-black uppercase tracking-[0.2em] text-blue-300 mb-4 text-center">Kitaran Acara</div>
                     <div class="text-6xl font-black text-center mb-2">{{ $competition->cycle }}</div>
@@ -83,7 +83,7 @@ $toggle = function ($index) {
                     <h2 class="text-3xl font-black text-[#002966] uppercase tracking-tighter">Tujuan</h2>
                     <p class="text-gray-500 mt-2 italic font-medium">"{{ $competition->objectives['main'] ?? 'Meningkatkan mutu penyampaian perkhidmatan kerajaan.' }}"</p>
                 </div>
-            
+
                 <div class="flex flex-wrap justify-center gap-6 text-center">
                     @foreach($competition->objectives['items'] as $item)
                         <div class="group bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-300 w-full sm:w-80 flex flex-col items-center">
@@ -99,11 +99,15 @@ $toggle = function ($index) {
                                 </p>
                             </div>
                         </div>
-                    @endforeach            
+                    @endforeach
                 </div>
             </div>
 
-            <div class="grid lg:grid-cols-2 gap-10 mb-20">
+            @php
+                $showTwoColumns = ($competition->categories && count($competition->categories) > 0) || ($competition->tracks && count($competition->tracks) > 0);
+            @endphp
+
+            <div class="grid {{ $showTwoColumns ? 'lg:grid-cols-2' : 'grid-cols-1 justify-items-center' }} gap-10 mb-20">
                 <div class="bg-white rounded-[3rem] p-10 border border-gray-100 shadow-sm">
                     <h3 class="text-xl font-black text-blue-900 mb-8 uppercase tracking-widest flex items-center gap-3">
                         <span class="text-2xl">📝</span> Syarat Penyertaan
@@ -121,7 +125,7 @@ $toggle = function ($index) {
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path>
                                         </svg>
                                     @endif
-                                </div>                        
+                                </div>
                                 <div>
                                     <p class="font-bold text-gray-800">{{ $req['title'] }}</p>
                                     <p class="text-sm text-gray-500">{{ $req['desc'] }}</p>
@@ -131,10 +135,12 @@ $toggle = function ($index) {
                     </ul>
                 </div>
 
+                @if(($competition->categories && count($competition->categories) > 0) || ($competition->tracks && count($competition->tracks) > 0))
                 <div class="bg-blue-900 rounded-[3rem] p-10 text-white shadow-2xl relative overflow-hidden">
                     <div class="absolute top-0 right-0 opacity-10 text-8xl translate-x-10 translate-y-10">✨</div>
-                    <h3 class="text-xl font-black text-blue-300 mb-8 uppercase tracking-widest">Kategori & Bidang</h3>
+                    <h3 class="text-xl font-black text-blue-300 mb-8 uppercase tracking-widest">{{ $competition->categories && count($competition->categories) > 0 ? 'Kategori &' : '' }} {{ $competition->tracks && count($competition->tracks) > 0 ? 'Bidang' : '' }}</h3>
                     <div class="grid sm:grid-cols-2 gap-8">
+                        @if($competition->categories && count($competition->categories) > 0)
                         <div class="space-y-4">
                             <h4 class="text-amber-500 font-bold uppercase text-xs tracking-widest">Kategori</h4>
                             <div class="space-y-3">
@@ -150,7 +156,9 @@ $toggle = function ($index) {
                                 @endforelse
                             </div>
                         </div>
+                        @endif
 
+                        @if($competition->tracks && count($competition->tracks) > 0)
                         <div class="space-y-4">
                             <h4 class="text-amber-500 font-bold uppercase text-xs tracking-widest">Bidang</h4>
                             <div class="space-y-3">
@@ -159,14 +167,16 @@ $toggle = function ($index) {
                                     <p class="font-bold text-sm">{{ $track }}</p>
                                 </div>
                             @empty
-                                <div class="p-4 rounded-2xl border border-dashed border-gray-700/50 flex flex-col items-center justify-center">
+                                <!--<div class="p-4 rounded-2xl border border-dashed border-gray-700/50 flex flex-col items-center justify-center">
                                     <p class="text-[10px] text-gray-500 uppercase font-black tracking-widest italic">Tiada Bidang Ditetapkan</p>
-                                </div>
+                                </div>-->
                             @endforelse
-                        </div>
-                    </div>
+                            </div>
+                      </div>
+                      @endif
                 </div>
             </div>
+            @endif
         </div>
 
         <div class="mb-20 bg-white rounded-[4rem] p-12 border border-gray-100 shadow-sm">
@@ -232,7 +242,7 @@ $toggle = function ($index) {
                     <button class="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center hover:bg-emerald-500 hover:text-white transition-all shadow-sm">w</button>
                 </div>-->
             </div>
-            
+
             <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})" class="group flex items-center gap-3 px-8 py-3 bg-gray-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-blue-600 transition-all shadow-xl">
                 Kembali ke Atas
                 <span class="group-hover:-translate-y-1 transition-transform">↑</span>

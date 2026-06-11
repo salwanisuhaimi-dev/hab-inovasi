@@ -7,33 +7,28 @@ use function Livewire\Volt\{layout, state, usesFileUploads, updated, computed};
 layout('layouts.app');
 usesFileUploads();
 
-// FORMAT TULEN VOLT: Semua state diisytihar dalam satu tempat yang sah
 state([
     'showModal' => false,
     'editing' => null,
     'title' => '',
     'description' => '',
+    'url' => '',
     'type' => 'TOR',
     'year' => date('Y'),
 
-    // Trik Terbesar: Menggunakan closure (fn() => []) memastikan Livewire
-    // sentiasa mengekalkan jenis data ARRAY dan menghalang ralat NULL GIVEN
     'pdfs' => fn() => [],
     'existing_pdfs' => fn() => [],
     'new_pdfs' => fn() => [],
 ]);
 
-// 1. Mengambil senarai publications (Kini sah boleh dipanggil menerusi $this->publications)
 $publications = computed(function () {
     return Publication::latest()->get();
 });
 
-// 2. Himpun fail PDF baru yang dipilih ke dalam array utama
 updated(['new_pdfs' => function ($value) {
     if (!$value) return;
     $files = is_array($value) ? $value : [$value];
 
-    // Pastikan array sedia ada dibaca sebagai array tulen
     $currentPdfs = $this->pdfs;
     foreach ($files as $file) {
         $currentPdfs[] = $file;
@@ -42,9 +37,8 @@ updated(['new_pdfs' => function ($value) {
     $this->new_pdfs = [];
 }]);
 
-// 3. Fungsi buka modal untuk tambah rekod baru
 $openCreateModal = function() {
-    $this->reset(['editing', 'title', 'description', 'type']);
+    $this->reset(['editing', 'title', 'description', 'type', 'url']);
     $this->year = date('Y');
     $this->pdfs = [];
     $this->existing_pdfs = [];
@@ -52,22 +46,20 @@ $openCreateModal = function() {
     $this->showModal = true;
 };
 
-// 4. Fungsi Edit: Ambil data lama masuk ke dalam borang
 $edit = function (Publication $publication) {
     $this->editing = $publication->id;
     $this->title = $publication->title;
     $this->description = $publication->description;
     $this->type = $publication->type;
     $this->year = $publication->year;
+    $this->url = $publication->url;
 
-    // Ambil senarai PDF sedia ada dari DB, jika tiada force jadi array []
     $this->existing_pdfs = is_array($publication->pdf_paths) ? $publication->pdf_paths : [];
     $this->pdfs = [];
 
     $this->showModal = true;
 };
 
-// 5. Buang PDF sementara dari senarai (Borang tambah)
 $removePdf = function ($index) {
     $currentPdfs = $this->pdfs;
     if (isset($currentPdfs[$index])) {
@@ -76,7 +68,6 @@ $removePdf = function ($index) {
     }
 };
 
-// 6. Buang PDF lama yang dah ada dalam DB (Borang edit)
 $removeExistingPdf = function ($index) {
     $currentExisting = $this->existing_pdfs;
     if (isset($currentExisting[$index])) {
@@ -85,7 +76,6 @@ $removeExistingPdf = function ($index) {
     }
 };
 
-// 7. Fungsi Simpan (Create & Update)
 $save = function () {
     $this->validate([
         'title' => 'required|string|max:255',
@@ -93,9 +83,9 @@ $save = function () {
         'type' => 'required|string',
         'year' => 'required|integer|min:2020|max:' . (date('Y') + 1),
         'pdfs.*' => 'nullable|mimes:pdf|max:20480',
+        'url' => 'string',
     ]);
 
-    // Validasi manual: Mesti ada fail jika bukan mod edit
     if (!$this->editing && count($this->pdfs) === 0) {
         $this->addError('pdfs', 'Sila muat naik sekurang-kurangnya satu fail PDF.');
         return;
@@ -110,6 +100,7 @@ $save = function () {
     $payload = [
         'title' => $this->title,
         'description' => $this->description,
+        'url' => $this->url,
         'type' => $this->type,
         'year' => $this->year,
         'pdf_paths' => $finalPaths,
@@ -131,7 +122,6 @@ $save = function () {
     $this->new_pdfs = [];
 };
 
-// 8. Fungsi Padam Rekod (Delete)
 $delete = function (Publication $publication) {
     $publication->delete();
     session()->flash('message', 'Dokumen rasmi berjaya dipadam dari sistem.');
@@ -172,7 +162,7 @@ $delete = function (Publication $publication) {
                     <th class="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Dokumen & Ringkasan</th>
                     <th class="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Kategori</th>
                     <th class="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Tahun</th>
-                    <th class="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Lampiran PDF</th>
+                    <th class="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Lampiran PDF / URL</th>
                     <th class="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Tindakan</th>
                 </tr>
             </thead>
@@ -233,8 +223,23 @@ $delete = function (Publication $publication) {
                                         </a>
                                     @endforeach
                                 </div>
-                            @else
-                                <span class="text-xs text-slate-400 italic">Tiada Fail</span>
+                            @endif
+
+                            <br>
+
+                            @if(!empty($pub->url))
+                                <a href="{{ Str::startsWith($pub->url, ['http://', 'https://']) ? $pub->url : 'https://' . $pub->url }}"
+                                    target="_blank"
+                                    class="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100/70 px-2.5 py-1.5 rounded-lg border border-red-100 transition-all max-w-[180px] truncate">
+
+                                    <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+                                    </svg>
+
+                                    <span class="inline-block max-w-[200px] truncate" title="{{ $pub->url }}">
+                                        {{ $pub->url }}
+                                    </span>
+                                </a>
                             @endif
                         </td>
 
@@ -363,6 +368,12 @@ $delete = function (Publication $publication) {
 
                              @error('pdfs') <span class="text-red-500 text-[10px] font-bold mt-1 block">{{ $message }}</span> @enderror
                              @error('pdfs.*') <span class="text-red-500 text-[10px] font-bold mt-1 block">{{ $message }}</span> @enderror
+                         </div>
+
+                         <div>
+                             <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-2">URL</label>
+                             <input type="text" wire:model="url" placeholder="cth: https://www.document.my" class="w-full bg-slate-50 border-none rounded-2xl p-4 text-sm font-bold focus:ring-2 focus:ring-blue-500 transition-all">
+                             @error('url') <span class="text-red-500 text-[10px] font-bold mt-1 block">{{ $message }}</span> @enderror
                          </div>
 
 
