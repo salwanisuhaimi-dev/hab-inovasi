@@ -5,17 +5,19 @@ use App\Models\Submission;
 use App\Models\CoffeeBreakSession;
 use function Livewire\Volt\{layout, state, with};
 
-layout('layouts.app'); 
+layout('layouts.app');
 
 state([
-   
+
 ]);
 
 with([
-    'programs' => fn() => Program::where('deadline', '>=', now())
-        ->where('status', 'aktif')
-        ->latest()
-        ->get(),
+   'programs' => fn() => Program::latest()
+      ->where('deadline', '>=', now())
+      ->withExists(['submissions as has_submitted' => function($query) {
+          $query->where('user_id', auth()->id());
+      }])
+      ->get(),
     'penyertaanSaya' => fn() => Submission::where('user_id', auth()->id())->count(),
     'myCoffB' => fn() => CoffeeBreakSession::where('created_by', auth()->id())->count(),
 ])
@@ -44,7 +46,7 @@ with([
                         </div>
                     </div>
 
-                    <a href="{{ route('profile') }}" 
+                    <a href="{{ route('profile') }}"
                         class="inline-flex items-center px-6 py-2.5 bg-amber-600 border border-transparent rounded-xl font-black text-[10px] text-white uppercase tracking-[0.15em] hover:bg-amber-700 active:bg-amber-800 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition ease-in-out duration-150 shadow-lg shadow-amber-200">
                             Lengkapkan Sekarang
                         <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -87,7 +89,7 @@ with([
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 8h1a4 4 0 010 8h-1M2 8h14v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8zM6 1v3M10 1v3M14 1v3" />
                             </svg>
-                        </div>                        
+                        </div>
                         <div class="ml-4">
                             <p class="text-sm text-gray-500 uppercase font-bold">Coff-B</p>
                             <h3 class="text-2xl font-black">{{ $myCoffB }}</h3>
@@ -114,13 +116,13 @@ with([
 
         <div class="mt-10">
             <h3 class="text-xl font-black text-gray-900 mb-6">Program Inovasi Untuk Disertai</h3>
-            
+
             @if($programs->isEmpty())
                 <div class="bg-gray-50 rounded-3xl p-10 text-center border-2 border-dashed border-gray-200">
                     <p class="text-gray-500 font-medium">Tiada program baru ditawarkan buat masa ini.</p>
                 </div>
             @else
-            
+
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 @foreach($programs as $program)
                 <div class="bg-white rounded-3xl border border-gray-100 shadow-sm p-8 hover:shadow-md transition-all flex flex-col h-full">
@@ -128,8 +130,8 @@ with([
                         <span class="px-3 py-1 bg-yellow-100 text-yellow-700 text-[10px] font-black uppercase rounded-full">
                             {{ $program->prize }}
                         </span>
-                    </div>  
-            
+                    </div>
+
                 <div class="flex-grow">
                     <h4 class="font-bold text-gray-900 leading-tight mb-2 text-lg">
                         {{ $program->title }}
@@ -144,14 +146,21 @@ with([
                 </div>
 
                 <div class="mt-auto pt-4">
-                    <a href="{{ route('project.submit', $program->id) }}" 
-                        class="block w-full text-center py-4 bg-blue-600 text-white rounded-2xl font-black text-sm hover:bg-blue-700 transition shadow-lg shadow-blue-100">
-                        Sertai Sekarang
-                    </a>
+                  @if($program->has_submitted)
+                      <button type="button" disabled
+                          class="block w-full text-center py-4 bg-emerald-100 text-emerald-700 rounded-2xl font-black text-sm cursor-not-allowed flex items-center justify-center gap-2">
+                          Telah Memohon
+                      </button>
+                  @else
+                      <a href="{{ route('project.submit', $program->id) }}"
+                          class="block w-full text-center py-4 bg-blue-600 text-white rounded-2xl font-black text-sm hover:bg-blue-700 transition shadow-lg shadow-blue-100">
+                          Sertai Sekarang
+                      </a>
+                  @endif
                 </div>
             </div>
                 @endforeach
-        </div>            
-            @endif 
+        </div>
+            @endif
     </div>
 </div>

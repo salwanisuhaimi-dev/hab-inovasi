@@ -53,7 +53,7 @@ Route::get('/auth/google/callback', function () {
             return redirect()->intended(route('admin.dashboard'));
         }
 
-        return redirect()->route('user.dashboard');
+        return redirect()->intended(route('user.dashboard'));
     } catch (\Exception $e) {
         return redirect('/login')->with('error', 'Gagal log masuk.');
     }

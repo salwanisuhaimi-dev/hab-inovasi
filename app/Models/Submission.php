@@ -11,7 +11,7 @@ class Submission extends Model
     use HasFactory;
 
     /**
-     * 
+     *
      */
     protected $fillable = [
         'program_id',
@@ -19,6 +19,7 @@ class Submission extends Model
         'project_title',
         'project_description',
         'group_name',
+        'total_members',
         'department_id',
         'file_path',
         'status',

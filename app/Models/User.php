@@ -66,4 +66,8 @@ class User extends Authenticatable
     public function sessions() {
         return $this->hasMany(CoffeeBreakSession::class, 'created_by');
     }
+
+    public function submissions() {
+        return $this->hasMany(Submission::class);
+    }
 }

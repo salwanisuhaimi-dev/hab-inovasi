@@ -13,16 +13,16 @@ return new class extends Migration
     {
         Schema::create('programs', function (Blueprint $table) {
             $table->id();
-            $table->string('title'); 
-            $table->date('start_date');
-            $table->date('end_date');
-            $table->time('start_time');
-            $table->time('end_time');
-            $table->string('location');
-            $table->text('description')->nullable(); 
+            $table->string('title');
+            $table->date('start_date')->nullable();
+            $table->date('end_date')->nullable();
+            $table->time('start_time')->nullable();
+            $table->time('end_time')->nullable();
+            $table->string('location')->nullable();
+            $table->text('description')->nullable();
             $table->string('prize')->nullable();
-            $table->date('deadline'); 
-            $table->string('status')->default('open'); 
+            $table->date('deadline');
+            $table->string('status')->default('open');
             $table->timestamps();
         });
     }

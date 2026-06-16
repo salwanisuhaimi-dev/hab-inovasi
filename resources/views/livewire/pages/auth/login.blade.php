@@ -23,10 +23,10 @@ new #[Layout('layouts.guest')] class extends Component
         if (auth()->user()->role === 'admin') {
             $this->redirectIntended(default: route('dashboard', absolute: false), navigate: true);
         } else {
-            $this->redirect(route('home', absolute: false), navigate: true);
-        }       
+            $this->redirect(route('user.dashboard', absolute: false), navigate: true);
+        }
     }
-}; 
+};
 
 ?>
 
@@ -68,9 +68,9 @@ new #[Layout('layouts.guest')] class extends Component
                     {{ __('Forgot your password?') }}
                 </a>
             @endif
-            
+
             <div class="mt-4 border-t pt-4">
-                <a href="{{ route('google.login') }}" 
+                <a href="{{ route('google.login') }}?intended={{ request()->query('intended') }}"
                    class="w-full flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-50 transition">
                     <img src="https://www.svgrepo.com/show/355037/google-icon.svg" class="w-5 h-5" alt="Google Logo">
                         Sign in with Google

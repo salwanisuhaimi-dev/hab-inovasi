@@ -82,8 +82,8 @@ $save = function () {
         'description' => 'required|string',
         'type' => 'required|string',
         'year' => 'required|integer|min:2020|max:' . (date('Y') + 1),
-        'pdfs.*' => 'nullable|mimes:pdf|max:20480',
-        'url' => 'string',
+        'pdfs.*' => 'nullable|mimes:pdf,doc,docx|max:20480',
+        'url' => 'nullable|string',
     ]);
 
     if (!$this->editing && count($this->pdfs) === 0) {
@@ -358,7 +358,7 @@ $delete = function (Publication $publication) {
                              {{-- Input Trigger Box --}}
                              <label class="flex items-center justify-center p-4 border-2 border-slate-200 border-dashed rounded-2xl cursor-pointer bg-slate-50 hover:bg-slate-100 transition-all">
                                  <span class="text-xs font-black text-slate-400 uppercase tracking-wider">➕ Muat Naik Fail PDF</span>
-                                 <input type="file" wire:model="new_pdfs" class="hidden" accept="application/pdf" multiple />
+                                 <input type="file" wire:model="new_pdfs" class="hidden" accept="application/pdf, application/msword, application/vnd.openxmlformats-officedocument.wordprocessingml.document, .doc, .docx" multiple />
                              </label>
 
                              {{-- Buffer Loading Message --}}
@@ -379,7 +379,7 @@ $delete = function (Publication $publication) {
 
                          <div class="pt-4 flex gap-3">
                               <button type="submit" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition">
-                                  {{ $editing ? 'Simpan Perubahan' : 'Simpan Program' }}
+                                  {{ $editing ? 'Simpan Perubahan' : 'Simpan Dokumen' }}
                               </button>
                               <button type="button" wire:click="$set('showModal', false)" class="flex-1 bg-gray-100 text-gray-600 py-3 rounded-xl font-bold hover:bg-gray-200 transition">Batal</button>
                          </div>

@@ -36,25 +36,45 @@ $toggle = function ($index) {
                     </p>
                 </div>
 
-                <div class="lg:w-1/3 flex justify-center lg:justify-end">
+                <div class="lg:w-1/3 flex flex-col items-center lg:items-end justify-center">
                     <div class="relative group">
-                        <div class="absolute inset-0 bg-blue-100 blur-2xl rounded-full opacity-50"></div>
-                        <div class="relative bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-[0_20px_50px_rgba(0,0,0,0.08)] animate-bounce duration-[4000ms] flex items-center gap-4 min-w-[260px]">
-                            <div class="w-14 h-14 bg-yellow-400 rounded-2xl flex items-center justify-center text-3xl shadow-lg shadow-yellow-200">
-                                💡
-                            </div>
-                            <div class="flex flex-col">
-                                <span class="text-[10px] font-black uppercase text-blue-500 tracking-[0.2em] mb-1">Status Terkini</span>
-                                <span class="text-lg font-bold text-gray-900 leading-none">Idea Inovasi</span>
-                                <span class="text-xs font-semibold text-emerald-500 mt-1.5 flex items-center gap-1">
-                                <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
-                                    Terbuka Sekarang
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                        @if($competition->image_path)
+                        <div class="absolute inset-0 bg-blue-600/10 blur-3xl rounded-[3rem] opacity-30 group-hover:opacity-75 transition-opacity duration-500"></div>
+                        <div class="relative bg-white p-5 rounded-[3rem] border border-gray-100 shadow-[0_20px_50px_rgba(0,0,0,0.04)] hover:shadow-[0_30px_60px_rgba(0,0,0,0.08)] hover:-translate-y-2 transition-all duration-500 w-full max-w-[340px] overflow-hidden flex flex-col gap-5">
+                             <div class="relative overflow-hidden rounded-[2.2rem] bg-stone-50 border border-stone-100 w-full h-[340px] flex items-center justify-center">
+                                  <img src="{{ asset('storage/' . $competition->image_path) }}"
+                                       alt="{{ $competition->name }}"
+                                       class="w-full h-full object-contain transform scale-100 group-hover:scale-103 transition-transform duration-500 ease-out block">
 
+                                   <!--<div class="absolute bottom-3 left-3 bg-white/90 backdrop-blur-md py-1.5 px-3.5 rounded-full shadow-sm flex items-center gap-1.5 border border-white/20">
+                                        <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+                                        <span class="text-[10px] font-bold text-gray-900 tracking-wider uppercase">Terbuka</span>
+                                   </div>-->
+                              </div>
+
+                              @auth
+                                  @if(auth()->user()->role === 'admin' || auth()->user()->is_admin)
+                                      <a href="#"
+                                         onclick="alert('Akses tidak dibenarkan.'); return false;"
+                                         class="w-full bg-blue-900 hover:bg-blue-950 text-white font-bold text-xs uppercase tracking-widest py-4 px-6 rounded-[1.8rem] text-center shadow-md shadow-blue-900/10 hover:shadow-lg transition-all duration-300 transform active:scale-95 block">
+                                          Sertai Sekarang
+                                      </a>
+                                  @else
+                                      <a href="{{ route('user.dashboard') }}"
+                                         class="w-full bg-blue-900 hover:bg-blue-950 text-white font-bold text-xs uppercase tracking-widest py-4 px-6 rounded-[1.8rem] text-center shadow-md shadow-blue-900/10 hover:shadow-lg transition-all duration-300 transform active:scale-95 block">
+                                          Sertai Sekarang
+                                      </a>
+                                  @endif
+                              @else
+                                  <a href="{{ route('login') }}?intended={{ urlencode(route('user.dashboard')) }}"
+                                     class="w-full bg-blue-900 hover:bg-blue-950 text-white font-bold text-xs uppercase tracking-widest py-4 px-6 rounded-[1.8rem] text-center shadow-md shadow-blue-900/10 hover:shadow-lg transition-all duration-300 transform active:scale-95 block">
+                                      Sertai Sekarang
+                                  </a>
+                              @endauth
+                        </div>
+                        @endif
+                    </div>
+               </div>
             </div>
         </header>
 

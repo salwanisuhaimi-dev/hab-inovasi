@@ -7,7 +7,7 @@ layout('layouts.app');
 
 with([
     'submissions' => fn() => Submission::where('user_id', auth()->id())
-        ->with(['program', 'department']) 
+        ->with(['program', 'department'])
         ->latest()
         ->get(),
 ]);
@@ -49,7 +49,6 @@ $delete = function (Submission $submission) {
                                 </td>
                                 <td class="px-6 py-6">
                                     <p class="text-lg text-gray-900">{{ $submission->group_name }}</p>
-                                    <p class="text-[10px] font-bold text-gray-600 uppercase mb-1">{{ $submission->department->name }}</p>
                                 </td>
                                 <td class="px-6 py-6">
                                     @php
@@ -66,12 +65,12 @@ $delete = function (Submission $submission) {
                                 <td class="px-6 py-6 text-right">
                                     <div class="flex justify-end gap-2">
                                         @if($submission->status === 'pending')
-                                            <a href="{{ route('user.edit-submission', $submission->id) }}" 
+                                            <a href="{{ route('user.edit-submission', $submission->id) }}"
                                                class="px-4 py-2 bg-gray-900 text-white text-xs font-bold rounded-xl hover:bg-blue-600 transition-all">
                                                 Edit
                                             </a>
-                                            
-                                            <button 
+
+                                            <button
                                                 wire:click="delete({{ $submission->id }})"
                                                 wire:confirm="Adakah anda pasti mahu memadam penyertaan ini?"
                                                 class="px-4 py-2 bg-red-50 text-red-600 text-xs font-bold rounded-xl hover:bg-red-100 transition-all">

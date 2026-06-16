@@ -23,13 +23,25 @@ class Program extends Model
         'start_time',
         'end_time',
         'location',
-        'prize',
         'deadline',
         'status',
+        'image_path',
+        'publication_id',
+        'form_publication_id',
     ];
 
     public function category()
     {
         return $this->belongsTo(ProgramType::class, 'category_id');
+    }
+
+    public function publication()
+    {
+        return $this->belongsTo(Publication::class);
+    }
+
+    public function formPublication()
+    {
+        return $this->belongsTo(Publication::class, 'form_publication_id');
     }
 }

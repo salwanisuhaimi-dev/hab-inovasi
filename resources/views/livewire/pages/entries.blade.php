@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Submission;
 use function Livewire\Volt\{layout, state, computed};
 
 layout('layouts.landing');
@@ -7,7 +8,8 @@ layout('layouts.landing');
 state(['openIndex' => null]);
 
 $programs = computed(function () {
-    return \App\Models\Program::where('category_id', 1)
+    return \App\Models\Program::whereIn('category_id', [1, 4, 5])
+        ->where('deadline', '>=', now())
         ->latest()
         ->get();
 });
@@ -30,7 +32,7 @@ $programs = computed(function () {
     <div class="min-h-screen bg-[#faf7f2] text-[#4a3728] font-sans pb-20 overflow-x-hidden">
         <x-top-nav />
 
-        <div class="max-w-7xl mx-auto px-6 py-10"> 
+        <div class="max-w-7xl mx-auto px-6 py-10">
             <header class="relative overflow-hidden rounded-[50px] p-10 md:p-16 mb-12 shadow-2xl border-4 border-white/20 bg-gradient-to-br from-[#064e3b] via-[#059669] to-[#064e3b]">
                 <div class="absolute top-0 right-0 w-96 h-96 bg-emerald-400/10 rounded-full -mr-32 -mt-32 blur-[100px]"></div>
                 <div class="absolute bottom-0 left-0 w-64 h-64 bg-emerald-900/40 rounded-full -ml-20 -mb-20 blur-[80px]"></div>
@@ -40,10 +42,10 @@ $programs = computed(function () {
                         <div class="inline-flex items-center px-4 py-1.5 bg-emerald-800/30 border border-emerald-400/30 rounded-full shadow-inner">
                             <span class="text-emerald-200 text-[10px] font-black uppercase tracking-[0.3em]">Hab Transformasi Kreatif</span>
                         </div>
-        
+
                         <h1 class="text-5xl md:text-7xl font-black leading-[1.1] text-white tracking-tighter">
                             Penyertaan <br>
-                            <span class="text-emerald-300 italic">Inovasi.</span>
+                            <span class="text-emerald-300 italic">Pertandingan.</span>
                         </h1>
 
                         <p class="text-emerald-50/70 text-lg font-medium max-w-xl leading-relaxed">
@@ -61,7 +63,7 @@ $programs = computed(function () {
                             <h3 class="text-emerald-300 font-black text-sm mb-1 uppercase tracking-wider">Langkah Mudah</h3>
                             <p class="text-white/80 text-sm leading-relaxed">Isi borang atas talian dan lampirkan kertas kerja anda.</p>
                         </div>
-        
+
                         <div class="p-6 rounded-[2rem] border border-white/10 bg-white/5 backdrop-blur-md shadow-xl transition-transform hover:-translate-y-1">
                             <div class="w-10 h-10 bg-amber-500 rounded-2xl flex items-center justify-center text-white font-bold mb-4 shadow-lg -rotate-3">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -84,7 +86,7 @@ $programs = computed(function () {
                     </div>
                 </div>
             </header>
-            <div class="grid lg:grid-cols-12 gap-12">          
+            <div class="grid lg:grid-cols-12 gap-12">
                 <div class="lg:col-span-4 space-y-12">
                     <section class="bg-[#efebe9] rounded-[32px] p-8 border border-stone-200">
                         <h3 class="text-lg font-bold mb-6 flex items-center gap-2">
@@ -99,7 +101,7 @@ $programs = computed(function () {
                                     </span>
                                     <span class="text-lg font-black leading-none text-green-600 group-hover:text-white">
                                     {{ \Carbon\Carbon::parse($program->start_date)->format('d') }}
-                                    </span>                            
+                                    </span>
                                 </div>
                                 <div>
                                 <h4 class="text-sm font-bold text-stone-800">{{ Str::limit($program->title, 30, '...') }}</h4>
@@ -107,7 +109,7 @@ $programs = computed(function () {
                                 </div>
                             </div>
                             @empty
-                            <div class="py-12 flex flex-col items-center justify-center border-2 border-dashed border-stone-300 rounded-[24px] opacity-60">       
+                            <div class="py-12 flex flex-col items-center justify-center border-2 border-dashed border-stone-300 rounded-[24px] opacity-60">
                                 <svg class="w-10 h-10 text-stone-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M18.5 8V18a2 2 0 0 1-2 2h-10a2 2 0 0 1-2-2V8M15 11v-4a3 3 0 0 0-6 0v4M2 8h20" />
                                 </svg>
@@ -122,7 +124,7 @@ $programs = computed(function () {
                         <div class="absolute top-0 left-0 w-2 h-full bg-[#1b9a4c]"></div>
                         <h2 class="text-2xl font-black italic mb-2 tracking-tighter">Leave a review</h2>
                         <p class="text-stone-400 text-[10px] mb-8 font-black uppercase tracking-[0.2em] italic">Maklum balas anda dihargai</p>
-                    
+
                         <div class="space-y-4">
                             <input type="text" placeholder="Nama Penuh" class="w-full p-5 rounded-2xl bg-[#faf7f2] border-none text-sm outline-none focus:ring-2 focus:ring-orange-600 transition-all">
                             <textarea rows="4" placeholder="Kongsikan pengalaman anda..." class="w-full p-5 rounded-2xl bg-[#faf7f2] border-none text-sm outline-none focus:ring-2 focus:ring-orange-600 transition-all"></textarea>
@@ -147,51 +149,137 @@ $programs = computed(function () {
                     </section>
                 </div>
 
-                <div class="lg:col-span-8 space-y-16"> 
+                <div class="lg:col-span-8 space-y-16">
                     <div class="grid grid-cols-1 gap-8 p-4">
                         <div class="flex items-center justify-between">
                             <h3 class="text-sm font-black text-stone-800 uppercase tracking-widest">Senarai Pertandingan</h3>
                             <div class="h-[1px] flex-1 bg-stone-200 mx-4"></div>
                         </div>
+                        <div class="flex flex-col gap-4 w-full">
                         @forelse($this->programs as $program)
-                        <div class="group bg-white rounded-3xl p-2 shadow-sm hover:shadow-xl transition-all duration-500 border border-gray-100">
-                            <div class="bg-gradient-to-br from-[#064e3b] to-[#022c22] rounded-2xl p-8 flex flex-col md:flex-row items-center gap-8">
-                                <div class="relative flex-shrink-0">
-                                    <div class="w-24 h-24 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl flex items-center justify-center shadow-inner transition-transform duration-500 group-hover:scale-105">
-                                        <svg class="w-12 h-12 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                                            <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"></path>
-                                        </svg>
-                                    </div>
-                                    <div class="absolute -top-2 -right-2 bg-yellow-500 text-emerald-950 text-[9px] font-bold px-3 py-1 rounded-md uppercase tracking-tighter shadow-sm">
-                                        Terbuka
-                                    </div>
-                                </div>
 
-                                <div class="flex-1 space-y-4">
-                                    <div>
-                                        <h4 class="text-xl md:text-2xl font-semibold text-white leading-snug tracking-tight">
-                                            {{ $program->title }}
-                                        </h4>
-                                        <div class="w-12 h-1 bg-yellow-500 mt-3 rounded-full opacity-80"></div>
-                                    </div>
-            
-                                    <p class="text-sm text-emerald-100/70 font-light leading-relaxed max-w-xl">
-                                        Inisiatif strategik bagi memacu budaya inovasi dan kecemerlangan penyampaian perkhidmatan organisasi.
-                                    </p>
-
-                                    <div class="flex items-center pt-2">
-                                        <a href="#" class="inline-flex items-center justify-center gap-3 bg-white hover:bg-yellow-500 text-[#064e3b] hover:text-white px-8 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all duration-300">
-                                            Sertai Sekarang
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
-                                            </svg>
-                                        </a>
-                                    </div>
-                                </div>
-
+                        <div class="group bg-white rounded-2xl border border-gray-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-[0_20px_40px_rgba(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-500 flex flex-col md:flex-row items-center overflow-hidden w-full max-w-4xl mx-auto min-h-[140px] p-4 md:p-5 gap-6">
+                            <div class="w-[90px] h-[120px] bg-sky-50 rounded-xl border border-gray-50 flex items-center justify-center overflow-hidden flex-shrink-0 p-1.5 relative shadow-inner">
+                                @if($program->image_path)
+                                    <img src="{{ asset('storage/' . $program->image_path) }}" alt="{{ $program->title }}" class="w-full h-full object-contain block transform group-hover:scale-105 transition-transform duration-500">
+                                @else
+                                    <span class="text-[8px] font-black text-gray-300 uppercase tracking-wider text-center">Tiada Imej</span>
+                                @endif
                             </div>
-                        </div>                        
+                            <div class="flex-1 w-full space-y-2 text-center md:text-left">
+                                <div class="flex flex-col md:flex-row md:items-center gap-2">
+                                    <!--<span class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-[9px] font-extrabold px-2 py-0.5 rounded uppercase tracking-wider border border-emerald-100/60 w-fit mx-auto md:mx-0">
+                                        <span class="w-1 h-1 bg-emerald-500 rounded-full animate-pulse"></span>
+                                        Terbuka
+                                    </span>-->
+
+                                    <h4 class="text-base font-extrabold text-gray-950 tracking-tight" title="{{ $program->title }}">
+                                        {{ $program->title }}
+                                    </h4>
+                                </div>
+
+                                <p class="text-xs text-gray-500 font-medium max-w-xl line-clamp-3">
+                                    {{ $program->description }}
+                                </p>
+
+                                <div class="flex flex-wrap items-center justify-center md:justify-start gap-x-4 gap-y-1 text-[11px] text-gray-500 font-semibold pt-1">
+                                    <!--<div class="flex items-center gap-1">
+                                        <span class="text-gray-400 font-medium">Yuran:</span>
+                                        <span class="text-gray-900 font-bold">RM50 / Pasukan</span>
+                                    </div>
+                                    <div class="hidden md:block text-gray-300">•</div>-->
+                                    <div class="flex items-center gap-1">
+                                        <span class="text-gray-400 font-medium">Tarikh Tutup:</span>
+                                        <span class="text-red-500 font-bold">{{ \Carbon\Carbon::parse($program->deadline)->format('d M Y') }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex flex-col sm:flex-row md:flex-col items-center md:items-end gap-3 w-full md:w-auto border-t md:border-t-0 md:border-l border-gray-100 pt-4 md:pt-0 md:pl-6 flex-shrink-0">
+                                @if(\Carbon\Carbon::parse($program->start_date)->isFuture())
+                                <div class="inline-flex items-center gap-1 bg-red-50 text-red-700 text-[10px] font-bold px-2.5 py-1 rounded-full border border-red-100 shadow-sm">
+                                    <span class="w-1 h-1 bg-red-500 rounded-full animate-pulse"></span>
+                                    {{ round(now()->diffInDays(\Carbon\Carbon::parse($program->start_date))) }} hari lagi
+                                </div>
+                                @endif
+
+                                <div class="flex flex-col gap-2 w-full sm:w-auto"> @if($program->form_publication_id && $program->formPublication)
+                                        @php
+                                            // Memandangkan formPublication menggunakan table publications yang sama,
+                                            // kita ambil paths fail borang tersebut (anda guna `pdf_paths` sebelum ini)
+                                            $formFiles = $program->formPublication->pdf_paths ?? [];
+                                        @endphp
+
+                                        @foreach($formFiles as $formIndex => $formPath)
+                                            <a href="{{ asset('storage/' . $formPath) }}"
+                                                target="_blank"
+                                                class="inline-flex items-center gap-1 text-[10px] font-black text-amber-600 uppercase tracking-widest hover:text-amber-800 transition-colors px-2 py-1 group/form-link">
+
+                                                <span>Muat Turun Borang {{ count($formFiles) > 1 ? ($formIndex + 1) : '' }}</span>
+
+                                                <svg class="w-3 h-3 transition-transform group-hover/form-link:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path>
+                                                </svg>
+                                            </a>
+                                        @endforeach
+                                    @endif
+
+                                    @php
+                                        $files = $program->publication->pdf_paths ?? [];
+                                    @endphp
+
+                                    @if(count($files) > 0)
+                                        @foreach($files as $index => $path)
+                                            <a href="{{ asset('storage/' . $path) }}"
+                                                target="_blank"
+                                                class="inline-flex items-center gap-1 text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-blue-900 transition-colors px-2 py-1 group/link">
+
+                                                <span>Garis Panduan {{ count($files) > 1 ? ($index + 1) : '' }}</span>
+
+                                                <svg class="w-3 h-3 transition-transform group-hover/link:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path>
+                                                </svg>
+                                            </a>
+                                        @endforeach
+                                    @else
+                                        <span class="text-[10px] font-bold text-gray-300 uppercase tracking-widest px-2 py-1 cursor-not-allowed">
+                                             Tiada Garis Panduan
+                                        </span>
+                                    @endif
+
+                                    <div class="mt-2">
+                                        @php
+                                            $hasApplied = false;
+                                            if (auth()->check()) {
+                                                $hasApplied = auth()->user()->submissions()
+                                                    ->where('program_id', $program->id)
+                                                    ->exists();
+                                            }
+                                        @endphp
+
+                                        @if(!auth()->check())
+                                            <a href="{{ route('login') }}?intended={{ urlencode(url()->current()) }}"
+                                                class="bg-blue-900 hover:bg-blue-950 text-white font-extrabold text-[10px] uppercase tracking-widest py-2 px-5 rounded-xl text-center transition-all duration-300 transform active:scale-95 whitespace-nowrap shadow-sm block w-full sm:w-auto">
+                                                Sertai
+                                            </a>
+                                        @elseif($hasApplied)
+                                            <button type="button" disabled
+                                                class="bg-gray-100 text-gray-400 font-extrabold text-[10px] uppercase tracking-widest py-2 px-4 rounded-xl text-center whitespace-nowrap cursor-not-allowed border border-gray-200 flex items-center justify-center gap-1 w-full sm:w-auto">
+                                                Telah Memohon
+                                            </button>
+                                        @else
+                                            <a href="{{ route('project.submit', $program->id) }}"
+                                                class="bg-blue-900 hover:bg-blue-950 text-white font-extrabold text-[10px] uppercase tracking-widest py-2 px-5 rounded-xl text-center transition-all duration-300 transform active:scale-95 whitespace-nowrap shadow-sm block w-full sm:w-auto">
+                                                Sertai
+                                            </a>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         @empty
+                        </div>
                         <div class="col-span-full py-20 flex flex-col items-center justify-center bg-white rounded-3xl border-2 border-dashed border-emerald-100 relative overflow-hidden group">
                             <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-emerald-50 rounded-full blur-[80px] opacity-50 group-hover:opacity-100 transition-opacity"></div>
                             <div class="relative z-10 flex flex-col items-center text-center">
@@ -202,10 +290,10 @@ $programs = computed(function () {
                                 </div>
 
                                 <h3 class="text-xl font-bold text-emerald-900 tracking-tight leading-tight">
-                                    Tiada Program Aktif <br> 
+                                    Tiada Program Aktif <br>
                                     <span class="text-emerald-600 font-medium">Buat Masa Ini</span>
                                 </h3>
-        
+
                                 <p class="mt-3 text-sm text-gray-500 max-w-[320px] leading-relaxed">
                                     Terima kasih atas minat anda. Sila semak semula dalam masa terdekat untuk peluang penyertaan baru.
                                 </p>
@@ -220,11 +308,10 @@ $programs = computed(function () {
                             <div class="absolute bottom-10 right-10 text-emerald-100 opacity-50 animate-pulse">
                                 <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
                             </div>
-                        </div>                        
-                        @endforelse        
+                        </div>
+                        @endforelse
                     </div>
-                </div>  
+                </div>
             </div>
         </div>
     </div>
-
