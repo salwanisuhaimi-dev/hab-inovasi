@@ -19,9 +19,9 @@ Volt::route('/coff-b', 'pages.coff-b')->name('coff-b');
 Volt::route('/quiz', 'pages.quiz')->name('quiz');
 Volt::route('/entries', 'pages.entries')->name('entries');
 Volt::route('/publication', 'pages.publication')->name('publication');
+Volt::route('/pitch', 'pages.pitch')->name('pitch');
 
 Volt::route('/testing', 'pages.testing')->name('testing');
-
 
 Volt::route('/faq', 'pages.faq')->name('faq');
 Volt::route('/overview/{competition:slug}', 'pages.overview')->name('overview');
@@ -90,6 +90,9 @@ Route::middleware(['auth'])->group(function () {
 
         Volt::route('/coffb/{session}/ideas-print', 'pages.user.coffb-ideas-print')
             ->name('user.coffb.ideas-print');
+
+        Volt::route('/pitches', 'pages.user.pitches-index')
+            ->name('user.pitches');
 
     });
 

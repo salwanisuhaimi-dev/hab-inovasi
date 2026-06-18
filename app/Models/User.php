@@ -70,4 +70,15 @@ class User extends Authenticatable
     public function submissions() {
         return $this->hasMany(Submission::class);
     }
+
+    public function pitches(): HasMany
+    {
+        return $this->hasMany(Pitch::class);
+    }
+
+    public function votes(): HasMany
+    {
+        return $this->hasMany(Vote::class);
+    }
+
 }

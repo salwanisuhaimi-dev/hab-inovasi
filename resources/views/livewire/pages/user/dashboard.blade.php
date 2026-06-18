@@ -3,6 +3,7 @@
 use App\Models\Program;
 use App\Models\Submission;
 use App\Models\CoffeeBreakSession;
+use App\Models\Pitch;
 use function Livewire\Volt\{layout, state, with};
 
 layout('layouts.app');
@@ -20,6 +21,7 @@ with([
       ->get(),
     'penyertaanSaya' => fn() => Submission::where('user_id', auth()->id())->count(),
     'myCoffB' => fn() => CoffeeBreakSession::where('created_by', auth()->id())->count(),
+    'myPitches' => fn() => Pitch::where('user_id', auth()->id())->count(),
 ])
 ?>
 
@@ -102,6 +104,26 @@ with([
                 </div>
             </a>
 
+            <a href="{{ route('user.pitches') }}" class="block transform transition hover:scale-[1.02] active:scale-95">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:border-blue-300 hover:shadow-md transition-all">
+                    <div class="flex items-center">
+                      <div class="p-3 bg-indigo-100 rounded-lg text-indigo-600">
+                          <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M12 18a3.75 3.75 0 0 0 .495-7.467 5.99 5.99 0 0 0-1.925 0A3.75 3.75 0 0 0 12 18Z" />
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M12 22h.008v.008H12V22ZM12 18v2M9.5 20h5" />
+                          </svg>
+                      </div>
+                      <div class="ml-4">
+                            <p class="text-sm text-gray-500 uppercase font-bold">Idea Inovasi</p>
+                            <h3 class="text-2xl font-black">{{ $myPitches }}</h3>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex items-center text-xs text-blue-600 font-bold">
+                        <span>Lihat Semua Idea</span>
+                        <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </div>
+                </div>
+            </a>
 
             <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center">
                 <div class="p-3 bg-blue-100 rounded-lg text-blue-600">

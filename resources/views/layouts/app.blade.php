@@ -127,6 +127,10 @@
                             {{ __('Sesi Coff-B') }}
                         </x-nav-link>
 
+                        <x-nav-link :href="route('user.pitches')" :active="request()->routeIs('user.pitches')" class="block w-full border-l-4" style="padding-left: 15px">
+                            {{ __('Idea Inovasi') }}
+                        </x-nav-link>
+
                     @endif
                 </nav>
 
