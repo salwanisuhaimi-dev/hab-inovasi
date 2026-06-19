@@ -47,8 +47,34 @@ state([
     ]
 ]);
 
+$viewDetails = function($id) {
+    $this->viewingPitch = Pitch::find($id);
+    $this->showViewModal = true;
+};
+
 $vote = function (Pitch $pitch) {
+    // 1. SEKATAN LOGIN: Hantar URL halaman sekarang melalui parameter 'from'
+    if (!auth()->check()) {
+        setcookie('back_to_pitch', url()->current(), time() + 300, '/');
+        $this->js("window.location.href = '" . route('login') . "';");
+        return $this->redirect(route('login'), navigate: false);
+    }
+
     $user = auth()->user();
+
+    // 2. SEKATAN: Pemilik idea tidak boleh undi idea sendiri
+    if ($pitch->user_id === $user->id) {
+        session()->flash('error', 'Anda tidak boleh mengundi idea anda sendiri!');
+        return;
+    }
+
+    // 3. SEKATAN: Admin tidak dibenarkan mengundi
+    if ((isset($user->is_admin) && $user->is_admin) || (isset($user->role) && $user->role === 'admin')) {
+        session()->flash('error', 'Pengguna berstatus Pentadbir (Admin) tidak dibenarkan mengundi.');
+        return;
+    }
+
+    // Prosedur undian asal
     $existingVote = Vote::where('user_id', $user->id)->where('pitch_id', $pitch->id)->first();
 
     if ($existingVote) {
@@ -60,20 +86,14 @@ $vote = function (Pitch $pitch) {
     }
 };
 
-$viewDetails = function(Pitch $pitch) {
-    $this->viewingPitch = $pitch;
-    $this->showViewModal = true;
-};
-
 ?>
-
-<style>
-    .pitch-gradient-header {
-        background: linear-gradient(135deg, #111827 0%, #1e1b4b 100%);
-    }
-</style>
-
 <div class="min-h-screen bg-[#faf7f2] text-[#4a3728] font-sans pb-20 overflow-x-hidden">
+    <style>
+        .pitch-gradient-header {
+            background: linear-gradient(135deg, #111827 0%, #1e1b4b 100%);
+        }
+        [x-cloak] { display: none !important; }
+    </style>
     <x-top-nav />
 
     <div class="max-w-7xl mx-auto px-6">
@@ -121,7 +141,6 @@ $viewDetails = function(Pitch $pitch) {
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
 
             <div class="lg:col-span-4 space-y-12">
-
                 <section class="bg-[#efebe9] rounded-[32px] p-8 border border-stone-200">
                     <div class="flex items-center justify-between mb-6">
                         <h3 class="text-base font-black uppercase tracking-tight flex items-center gap-2 text-stone-800">
@@ -186,66 +205,185 @@ $viewDetails = function(Pitch $pitch) {
                 </section>
             </div>
 
-            <div class="lg:col-span-8 space-y-16">
-                <div class="grid grid-cols-1 gap-8 p-4">
-                    <div class="flex items-center justify-between">
-                        <h3 class="text-sm font-black text-stone-800 uppercase tracking-widest">Senarai Idea Inovasi</h3>
-                        <div class="h-[1px] flex-1 bg-stone-200 mx-4"></div>
-                    </div>
+            <div class="lg:col-span-8 space-y-6">
+                <div class="flex items-center justify-between px-4">
+                    <h3 class="text-sm font-black text-stone-800 uppercase tracking-widest">Senarai Idea Inovasi</h3>
+                    <div class="h-[1px] flex-1 bg-stone-200 mx-4"></div>
+                </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 p-4">
                     @forelse($this->pitches as $pitch)
-                          <div class="bg-white p-8 rounded-[40px] shadow-sm hover:shadow-xl transition-all duration-300 border border-stone-100 relative group">
+                        <div x-data="{
+                            userReaction: null,
+                            reactions: { '🔥': 12, '💡': 24, '🚀': 8 }
+                        }" class="bg-white p-8 rounded-[40px] shadow-sm hover:shadow-xl transition-all duration-300 border border-stone-100 relative group flex flex-col justify-between">
+
+                            <div>
                                 <div class="absolute top-6 right-8 opacity-20 group-hover:opacity-100 transition-opacity">
                                     <span class="text-2xl">⚡️</span>
                                 </div>
 
                                 <div class="flex items-center gap-3 mb-6">
-                                      <div class="w-12 h-12 rounded-2xl bg-orange-100 flex items-center justify-center text-orange-700 font-black shadow-inner tracking-tighter text-sm">
-                                      @php
-                                          $name = $pitch->user->name ?? 'Ahli Kumpulan';
-                                          $words = explode(' ', trim($name));
-                                          $initials = strtoupper(substr($words[0], 0, 1) . (isset($words[1]) ? substr($words[1], 0, 1) : ''));
-                                      @endphp
+                                    <div class="w-12 h-12 rounded-2xl bg-orange-100 flex items-center justify-center text-orange-700 font-black shadow-inner tracking-tighter text-sm">
+                                        @php
+                                            $name = $pitch->user->name ?? 'Ahli Kumpulan';
+                                            $words = explode(' ', trim($name));
+                                            $initials = strtoupper(substr($words[0], 0, 1) . (isset($words[1]) ? substr($words[1], 0, 1) : ''));
+                                        @endphp
+                                        {{ $initials }}
+                                    </div>
 
-                                      {{ $initials }}
-                                      </div>
-
-                                      <div>
-                                          <h4 class="text-sm font-black text-stone-800 uppercase tracking-tight">
-                                              {{ $pitch->user->name ?? 'Unknown' }}
-                                          </h4>
-                                          <span class="text-[9px] bg-stone-100 px-2 py-0.5 rounded text-stone-500 uppercase font-bold tracking-widest block w-max mt-0.5">
-                                              {{ $pitch->user->department->name ?? 'N/A' }}
-                                          </span>
-                                      </div>
+                                    <div>
+                                        <h4 class="text-sm font-black text-stone-800 uppercase tracking-tight">
+                                            {{ $pitch->user->name ?? 'Unknown' }}
+                                        </h4>
+                                        <span class="text-[9px] bg-stone-100 px-2 py-0.5 rounded text-stone-500 uppercase font-bold tracking-widest block w-max mt-0.5">
+                                            {{ $pitch->user->department->name ?? 'N/A' }}
+                                        </span>
+                                    </div>
                                 </div>
 
-                                <div class="space-y-2">
-                                    <h5 class="text-xs font-black text-stone-400 uppercase tracking-wider">Metodologi Idea:</h5>
-                                    <p class="text-stone-600 text-sm leading-relaxed italic border-l-4 border-orange-200 pl-4 font-serif bg-orange-50/30 py-2 rounded-r-xl">
-                                          "{{ $pitch->method ?? $pitch->description }}"
+                                <div class="space-y-3">
+                                    <h3 class="text-xl font-black text-stone-900 uppercase italic tracking-tight group-hover:text-orange-600 transition-colors">
+                                        {{ $pitch->title }}
+                                    </h3>
+
+                                    <p class="text-xs text-stone-500 leading-relaxed line-clamp-2">
+                                        {{ $pitch->description }}
                                     </p>
+
+                                    <div class="pt-2 relative z-10">
+                                        <button type="button"
+                                                wire:click="viewDetails({{ $pitch->id }})"
+                                                class="text-[10px] font-black uppercase tracking-widest text-orange-600 hover:text-stone-900 transition-colors focus:outline-none flex items-center gap-1 cursor-pointer">
+                                            Lihat Butiran Penuh &rarr;
+                                        </button>
+                                    </div>
                                 </div>
-                          </div>
+                            </div>
+
+                            <div class="mt-6 space-y-4">
+                                <div class="h-[1px] w-full bg-stone-100"></div>
+
+                                <div class="flex items-center justify-between gap-2">
+                                    <div class="flex items-center gap-1.5 bg-stone-50 px-3 py-1.5 rounded-full border border-stone-200/50 w-max">
+                                        <template x-for="(count, emoji) in reactions">
+                                            <button @click="
+                                                if(userReaction === emoji) { reactions[emoji]--; userReaction = null; }
+                                                else {
+                                                    if(userReaction) { reactions[userReaction]--; }
+                                                    reactions[emoji]++; userReaction = emoji;
+                                                }"
+                                                :class="userReaction === emoji ? 'bg-orange-200 border-orange-400 scale-105' : 'bg-white hover:bg-stone-100 border-stone-200'"
+                                                class="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-black text-stone-700 transition-all border shadow-2xs">
+                                                <span x-text="emoji"></span>
+                                                <span x-text="count" class="text-[10px] text-stone-500"></span>
+                                            </button>
+                                        </template>
+                                    </div>
+
+                                    <div class="flex items-center gap-2 bg-stone-50 px-3 py-1.5 rounded-2xl border border-stone-200/50 shrink-0">
+                                      @if(!auth()->check())
+                                          <button wire:click="vote({{ $pitch->id }})"
+                                                  class="w-8 h-8 inline-flex items-center justify-center rounded-xl transition-all focus:outline-none text-stone-400 hover:text-rose-600"
+                                                  title="Log masuk untuk undi">
+                                              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                                  <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
+                                              </svg>
+                                          </button>
+                                      @elseif(auth()->id() !== $pitch->user_id && !(auth()->user()->is_admin ?? false) && !(auth()->user()->role === 'admin'))
+                                          <button wire:click="vote({{ $pitch->id }})"
+                                                  class="w-8 h-8 inline-flex items-center justify-center rounded-xl transition-all focus:outline-none
+                                                  {{ $pitch->has_voted ? 'bg-rose-100 text-rose-600 scale-105' : 'text-stone-400 hover:text-rose-600' }}"
+                                                  title="{{ $pitch->has_voted ? 'Batal Undi' : 'Suka Idea Ini' }}">
+                                              <svg class="w-4 h-4 {{ $pitch->has_voted ? 'fill-current' : '' }}" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                                  <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
+                                              </svg>
+                                          </button>
+                                      @else
+                                          <div class="w-8 h-8 inline-flex items-center justify-center text-stone-300 cursor-not-allowed"
+                                               title="{{ auth()->id() === $pitch->user_id ? 'Idea Anda Sendiri' : 'Admin Tidak Boleh Mengundi' }}">
+                                              <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                                                  <path d="M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5zm-3 5a3 3 0 0 1 6 0v3H9V7zm3 9a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/>
+                                              </svg>
+                                          </div>
+                                      @endif
+                                        <span class="text-sm font-black text-stone-800 pr-1">
+                                            {{ $pitch->votes_count }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
                     @empty
-                          <div class="col-span-full py-16 flex flex-col items-center justify-center bg-white rounded-[40px] border-2 border-dashed border-stone-200 shadow-sm relative overflow-hidden group">
-                                <div class="relative z-10 flex flex-col items-center text-center px-6">
-                                      <div class="w-20 h-20 bg-[#faf7f2] rounded-[30px] flex items-center justify-center shadow-inner mb-4 rotate-[-6deg] group-hover:rotate-0 transition-transform duration-500">
-                                            <span class="text-4xl grayscale opacity-40 group-hover:grayscale-0 group-hover:opacity-100 transition-all">🌱</span>
-                                      </div>
-                                      <h3 class="text-xl font-black text-stone-800 uppercase italic tracking-tight">
-                                            Tiada Idea <br> <span class="text-amber-500">Dikongsi Lagi</span>
-                                      </h3>
-                                      <p class="mt-2 text-xs text-stone-400 font-medium italic max-w-[280px] leading-relaxed">
-                                            Belum ada sebarang cadangan strategi atau metodologi pitching dikemukakan buat masa ini.
-                                      </p>
+                        <div class="col-span-full py-16 flex flex-col items-center justify-center bg-white rounded-[40px] border-2 border-dashed border-stone-200 shadow-sm relative overflow-hidden">
+                            <div class="relative z-10 flex flex-col items-center text-center px-6">
+                                <div class="w-20 h-20 bg-[#faf7f2] rounded-[30px] flex items-center justify-center shadow-inner mb-4">
+                                    <span class="text-4xl grayscale opacity-40">🌱</span>
                                 </div>
-                          </div>
-                     @endforelse
-                     </div>
+                                <h3 class="text-xl font-black text-stone-800 uppercase italic tracking-tight">
+                                    Tiada Idea <br> <span class="text-amber-500">Dikongsi Lagi</span>
+                                </h3>
+                                <p class="mt-2 text-xs text-stone-400 font-medium italic max-w-[280px] leading-relaxed">
+                                    Belum ada sebarang cadangan strategi atau metodologi pitching dikemukakan buat masa ini.
+                                </p>
+                            </div>
+                        </div>
+                    @endforelse
                 </div>
             </div>
+
+        </div>
+    </div>
+
+    <div x-data="{ open: @entangle('showViewModal') }"
+         x-show="open"
+         x-transition
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-x-hidden overflow-y-auto"
+         style="display: none;">
+
+        <div class="fixed inset-0 bg-stone-900/40 backdrop-blur-xs transition-opacity" @click="open = false; $wire.set('showViewModal', false)"></div>
+
+        <div class="relative w-full max-w-2xl bg-white rounded-[40px] shadow-2xl border border-stone-100 p-8 md:p-10 z-50 max-h-[90vh] overflow-y-auto space-y-6">
+            @if($viewingPitch)
+                <div class="flex items-start justify-between border-b border-stone-100 pb-4">
+                    <div>
+                        <span class="text-[9px] bg-orange-100 px-2.5 py-1 rounded-full text-orange-700 font-black uppercase tracking-widest">Butiran Cadangan</span>
+                        <h2 class="text-2xl font-black text-stone-900 uppercase italic tracking-tight mt-2">
+                            {{ $viewingPitch->title }}
+                        </h2>
+                        <p class="text-xs text-stone-400 mt-1 uppercase font-bold">
+                            Oleh: {{ $viewingPitch->user->name ?? 'Ahli Kumpulan' }} ({{ $viewingPitch->user->department->name ?? 'Jabatan Am' }})
+                        </p>
+                    </div>
+                    <button @click="open = false; $wire.set('showViewModal', false)" class="text-stone-400 hover:text-stone-700 transition-colors bg-stone-100 p-2 rounded-full">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+
+                <div class="space-y-6">
+                    <div class="space-y-2">
+                        <h4 class="text-xs font-black text-stone-400 uppercase tracking-wider">Penerangan Ringkas:</h4>
+                        <p class="text-stone-600 text-sm leading-relaxed bg-stone-50 p-5 rounded-[24px] whitespace-pre-line">
+                            {{ $viewingPitch->description }}
+                        </p>
+                    </div>
+
+                    <div class="space-y-2">
+                        <h4 class="text-xs font-black text-stone-400 uppercase tracking-wider">Metodologi & Cara Pelaksanaan:</h4>
+                        <p class="text-stone-700 text-sm leading-relaxed italic border-l-4 border-orange-400 pl-4 font-serif bg-orange-50/30 p-5 rounded-r-[24px] whitespace-pre-line">
+                            "{{ $viewingPitch->method ?? 'Tiada butiran metodologi disediakan.' }}"
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-end pt-4 border-t border-stone-100">
+                    <button @click="open = false; $wire.set('showViewModal', false)" class="px-6 py-3 bg-stone-900 hover:bg-stone-800 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl transition-all shadow-md">
+                        Tutup Paparan
+                    </button>
+                </div>
+            @endif
         </div>
     </div>
 </div>

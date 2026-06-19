@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Auth;
 use Livewire\Volt\Volt;
 use App\Livewire\Pages\User\SubmitProject;
 use App\Http\Controllers\ReportController;
+use Illuminate\Support\Facades\Cookie;
 
 /*
 |--------------------------------------------------------------------------
@@ -48,6 +49,14 @@ Route::get('/auth/google/callback', function () {
         ]);
 
         Auth::login($user);
+
+        $redirectToPitch = $_COOKIE['back_to_pitch'] ?? null;
+
+        if ($redirectToPitch) {
+            setcookie('back_to_pitch', '', time() - 3600, '/');
+
+            return redirect($redirectToPitch);
+        }
 
         if ($user->role === 'admin') {
             return redirect()->intended(route('admin.dashboard'));

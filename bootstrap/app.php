@@ -16,7 +16,12 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => \App\Http\Middleware\IsAdmin::class,
             'profile.complete' => \App\Http\Middleware\EnsureProfileIsComplete::class,
         ]);
-    })    
+    })
+    ->withMiddleware(function (Middleware $middleware) {
+        $middleware->encryptCookies(except: [
+            'back_to_pitch', // Beritahu Laravel jangan encrypt cookie ini
+        ]);
+    })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
     })->create();

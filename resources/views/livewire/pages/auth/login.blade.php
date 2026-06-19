@@ -14,11 +14,19 @@ new #[Layout('layouts.guest')] class extends Component
      */
     public function login(): void
     {
+        $redirectToPitch = $_COOKIE['back_to_pitch'] ?? null;
+
         $this->validate();
-
         $this->form->authenticate();
-
         Session::regenerate();
+
+
+        if ($redirectToPitch) {
+            setcookie('back_to_pitch', '', time() - 3600, '/');
+
+            $this->redirect($redirectToPitch, navigate: false);
+            return;
+        }
 
         if (auth()->user()->role === 'admin') {
             $this->redirectIntended(default: route('dashboard', absolute: false), navigate: true);

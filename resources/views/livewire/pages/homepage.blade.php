@@ -87,7 +87,7 @@ $checkAnswer = function ($key) {
                 <a href="#explore" class="w-full sm:w-auto px-8 py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition shadow-xl">
                     Lihat Arkib Projek
                 </a>
-                <a href="#" class="w-full sm:w-auto px-8 py-4 bg-white/10 backdrop-blur-md text-white border border-white/20 rounded-2xl font-bold hover:bg-white/20 transition">
+                <a href="{{ route('pitch') }}" class="w-full sm:w-auto px-8 py-4 bg-white/10 backdrop-blur-md text-white border border-white/20 rounded-2xl font-bold hover:bg-white/20 transition">
                     Hantar Idea Baru
                 </a>
             </div>
