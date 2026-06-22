@@ -33,6 +33,10 @@ Volt::route('/overview/{competition:slug}', 'pages.overview')->name('overview');
 |--------------------------------------------------------------------------
 */
 Route::get('/auth/google', function () {
+
+    if (request()->has('intended')) {
+        session(['url.intended' => request()->query('intended')]);
+    }
     return Socialite::driver('google')->redirect();
 })->name('google.login');
 
@@ -50,12 +54,10 @@ Route::get('/auth/google/callback', function () {
 
         Auth::login($user);
 
-        $redirectToPitch = $_COOKIE['back_to_pitch'] ?? null;
+        $redirectTo = session()->pull('url.intended');
 
-        if ($redirectToPitch) {
-            setcookie('back_to_pitch', '', time() - 3600, '/');
-
-            return redirect($redirectToPitch);
+        if ($redirectTo) {
+            return redirect()->to($redirectTo);
         }
 
         if ($user->role === 'admin') {
