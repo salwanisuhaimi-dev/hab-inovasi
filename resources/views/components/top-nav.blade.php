@@ -34,17 +34,17 @@
                             @endforeach
                         </div>
                     </div>
-                    <a href="{{ url('/#info') }}"
-                       class="text-sm font-bold uppercase transition-all duration-300 relative py-2 {{ request()->is('/#info') ? 'text-blue-600' : 'text-gray-600 hover:text-blue-600' }}">
+                    <a href="{{ route('info') }}"
+                       class="text-sm font-bold uppercase transition-all duration-300 relative py-2 {{ request()->is('info') ? 'text-blue-600' : 'text-gray-600 hover:text-blue-600' }}">
                        Info
-                       @if(request()->is('/#info'))
+                       @if(request()->routeIs('info'))
                             <span class="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 rounded-full"></span>
                        @endif
                     </a>
                     <a href="{{ route('publication') }}"
                        class="text-sm font-bold uppercase transition-all duration-300 relative py-2 {{ request()->is('publication') ? 'text-blue-600' : 'text-gray-600 hover:text-blue-600' }}">
                        Penerbitan
-                       @if(request()->is('/#publication'))
+                       @if(request()->is('publication'))
                             <span class="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 rounded-full"></span>
                        @endif
 
@@ -56,13 +56,9 @@
                             <span class="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 rounded-full"></span>
                        @endif
                     </a>
-                    <a href="{{ url('/#contact-us') }}"
-                       class="text-sm font-bold uppercase transition-all duration-300 relative py-2 {{ request()->is('/#contact-us') ? 'text-blue-600' : 'text-gray-600 hover:text-blue-600' }}">
-                       Hubungi Kami
-                       @if(request()->is('/#contact-us'))
-                            <span class="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 rounded-full"></span>
-                       @endif
-                    </a>
+
+                    @include('partials.nav-contact-dropdown')
+
             </div>
 
             <div class="flex-1 flex justify-end">

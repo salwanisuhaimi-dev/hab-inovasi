@@ -1,13 +1,13 @@
 <footer id="contact-us" class="relative bg-[#0f172a] pt-20 pb-10 overflow-hidden text-white">
     <div class="absolute inset-0 z-0">
-        <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070" 
+        <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070"
              class="w-full h-full object-cover opacity-10 grayscale">
         <div class="absolute inset-0 bg-gradient-to-t from-[#0f172a] via-transparent to-transparent"></div>
     </div>
 
     <div class="relative z-10 max-w-7xl mx-auto px-6">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-16 mb-16">
-            
+
             <div class="col-span-1">
                 <div class="flex items-center space-x-3 mb-8">
                     <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
@@ -23,14 +23,23 @@
             <div class="md:pl-10">
                 <h4 class="text-xs font-bold uppercase tracking-[0.2em] mb-8 text-blue-400">Pautan Pantas</h4>
                 <ul class="space-y-4 text-sm font-semibold text-slate-300">
-                    <li><a href="/" class="hover:text-white transition-colors duration-300 flex items-center">
+                    <li><a href="{{ route('home') }}" class="hover:text-white transition-colors duration-300 flex items-center">
                         <span class="w-1.5 h-1.5 bg-blue-500 rounded-full mr-3"></span>Laman Utama</a>
                     </li>
-                    <li><a href="#" class="hover:text-white transition-colors duration-300 flex items-center">
+                    <li><a href="{{ route('archive') }}" class="hover:text-white transition-colors duration-300 flex items-center">
                         <span class="w-1.5 h-1.5 bg-blue-500 rounded-full mr-3"></span>Arkib Inovasi</a>
                     </li>
-                    <li><a href="#" class="hover:text-white transition-colors duration-300 flex items-center">
+                    <li><a href="{{ route('coff-b') }}" class="hover:text-white transition-colors duration-300 flex items-center">
                         <span class="w-1.5 h-1.5 bg-blue-500 rounded-full mr-3"></span>Coffee Break</a>
+                    </li>
+                    <li><a href="{{ route('entries') }}" class="hover:text-white transition-colors duration-300 flex items-center">
+                        <span class="w-1.5 h-1.5 bg-blue-500 rounded-full mr-3"></span>Pertandingan</a>
+                    </li>
+                    <li><a href="{{ route('pitch') }}" class="hover:text-white transition-colors duration-300 flex items-center">
+                        <span class="w-1.5 h-1.5 bg-blue-500 rounded-full mr-3"></span>Hantar Idea Baru</a>
+                    </li>
+                    <li><a href="{{ route('quiz') }}" class="hover:text-white transition-colors duration-300 flex items-center">
+                        <span class="w-1.5 h-1.5 bg-blue-500 rounded-full mr-3"></span>Kuiz</a>
                     </li>
                 </ul>
             </div>

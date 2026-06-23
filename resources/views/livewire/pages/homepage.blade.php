@@ -2,11 +2,21 @@
 
 use App\Models\Archive;
 use App\Models\Quiz;
+use App\Models\Program;
 use function Livewire\Volt\{layout, with, state, mount};
 
 layout('layouts.landing');
 
-with(['projects' => Archive::latest()->get()]);
+with([
+  'projects' => Archive::latest()->get(),
+  'programs' => fn() => Program::where(function ($query) {
+          $query->whereDate('start_date', '>=', now())
+                ->orWhereNull('start_date')
+                ->orWhere('start_date', '0000-00-00');
+      })
+      ->latest()
+      ->get(),
+]);
 
 state([
     'showWelcome' => true,
@@ -37,12 +47,10 @@ mount(function () {
 
 $checkAnswer = function ($key) {
     if ($this->userAnswer === null) {
-        $this->userAnswer = $key; // Simpan 'A' (Huruf Besar untuk UI)
+        $this->userAnswer = $key;
 
-        // Kita tukar 'A' (key) kepada 'a' (untuk banding dengan DB)
         $lowercaseKey = strtolower($key);
 
-        // Bandingkan 'a' dengan data dari database (yang juga 'a')
         $this->isCorrect = ($lowercaseKey === $this->activeQuestion['answer']);
     }
 };
@@ -50,7 +58,7 @@ $checkAnswer = function ($key) {
 ?>
 
 <div class="min-h-screen bg-[#f8fafc] relative">
-    <div class="fixed inset-0 pointer-events-none" style="z-index: 0; overflow: hidden;">
+    <!--<div class="fixed inset-0 pointer-events-none" style="z-index: 0; overflow: hidden;">
         <div style="position: absolute; inset: 0; opacity: 0.35; background-image: radial-gradient(#334155 2px, transparent 2px); background-size: 40px 40px;"></div>
 
         <div style="position: absolute; top: 0; right: 0; width: 800px; height: 800px; background: radial-gradient(circle, rgba(37, 99, 235, 0.3) 0%, transparent 70%); filter: blur(60px); transform: translate(20%, -20%);"></div>
@@ -58,91 +66,91 @@ $checkAnswer = function ($key) {
         <div style="position: absolute; bottom: 0; left: 0; width: 600px; height: 600px; background: radial-gradient(circle, rgba(124, 58, 237, 0.25) 0%, transparent 70%); filter: blur(60px); transform: translate(-20%, 20%);"></div>
 
         <div style="position: absolute; inset: 0; background: radial-gradient(circle at center, transparent 0%, rgba(253, 253, 252, 0.4) 100%);"></div>
-    </div>
+    </div>-->
 
-    <div class="relative z-10">
 
     <x-top-nav />
+    <div class="relative z-10">
 
-    <header class="relative py-32 px-6 bg-gray-900 overflow-visible">
-        <div class="absolute inset-0 z-0 overflow-hidden">
-            <img src="{{ asset('images/corporate.jpg') }}"
-                 class="w-full h-full object-cover opacity-40 scale-125 transform"
-                 style="object-position: center;"
-                 alt="Innovation Background">
-            <div class="absolute inset-0 bg-black/50"></div>
-            <div class="absolute inset-0 bg-gradient-to-b from-gray-900/80 via-transparent to-gray-900"></div>
-        </div>
+        <header class="relative py-32 px-6 bg-gray-900 overflow-visible">
+            <div class="absolute inset-0 z-0 overflow-hidden">
+                <img src="{{ asset('images/corporate.jpg') }}"
+                    class="w-full h-full object-cover opacity-40 scale-125 transform"
+                    style="object-position: center;"
+                    alt="Innovation Background">
+                <div class="absolute inset-0 bg-black/50"></div>
+                <div class="absolute inset-0 bg-gradient-to-b from-gray-900/80 via-transparent to-gray-900"></div>
+            </div>
 
-        <div class="max-w-4xl mx-auto text-center relative z-10">
-            <h2 class="text-5xl md:text-7xl font-black text-white mb-8 tracking-tighter leading-tight">
-                Teroka Idea <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">Masa Depan</span> Melalui Inovasi.
-            </h2>
+            <div class="max-w-4xl mx-auto text-center relative z-10">
+                 <h2 class="text-5xl md:text-7xl font-black text-white mb-8 tracking-tighter leading-tight">
+                    Teroka Idea <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">Masa Depan</span> Melalui Inovasi.
+                </h2>
 
-            <p class="text-lg text-gray-300 max-w-2xl mx-auto leading-relaxed mb-10">
-                Himpunan idea kreatif dan projek digital warga jabatan yang memacu transformasi dan kecemerlangan perkhidmatan.
-            </p>
+                <p class="text-lg text-gray-300 max-w-2xl mx-auto leading-relaxed mb-10">
+                    Himpunan idea kreatif dan projek digital warga jabatan yang memacu transformasi dan kecemerlangan perkhidmatan.
+                </p>
 
-            <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <a href="#explore" class="w-full sm:w-auto px-8 py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition shadow-xl">
-                    Lihat Arkib Projek
+                <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                    <a href="#explore" class="w-full sm:w-auto px-8 py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition shadow-xl">
+                        Lihat Arkib Projek
+                    </a>
+                    <a href="{{ route('pitch') }}" class="w-full sm:w-auto px-8 py-4 bg-white/10 backdrop-blur-md text-white border border-white/20 rounded-2xl font-bold hover:bg-white/20 transition">
+                        Hantar Idea Baru
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <section class="relative mx-auto max-w-7xl px-6" style="margin-top: -100px; z-index: 30;">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <a href="{{ route('archive') }}" wire:navigate class="flex group">
+                    <div class="bg-white p-8 rounded-[2rem] shadow-xl shadow-gray-200/50 border border-gray-50 hover:bg-blue-600 transition-all duration-500 transform hover:-translate-y-2 h-full">
+                        <div class="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-blue-500 transition">
+                            <svg class="w-7 h-7 text-blue-600 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-900 group-hover:text-white mb-2">Arkib Inovasi</h3>
+                        <p class="text-gray-500 group-hover:text-blue-100 text-sm leading-relaxed">Himpunan projek kreatif yang telah berjaya dilaksanakan.</p>
+                    </div>
                 </a>
-                <a href="{{ route('pitch') }}" class="w-full sm:w-auto px-8 py-4 bg-white/10 backdrop-blur-md text-white border border-white/20 rounded-2xl font-bold hover:bg-white/20 transition">
-                    Hantar Idea Baru
+                <a href="{{ route('coff-b') }}" wire:navigate class="flex group">
+                    <div class="group bg-white p-8 rounded-[2rem] shadow-xl shadow-gray-200/50 border border-gray-50 hover:bg-orange-500 transition-all duration-500 transform hover:-translate-y-2">
+                        <div class="w-14 h-14 bg-orange-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-orange-400 transition">
+                            <svg class="w-7 h-7 text-orange-600 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"></path>
+                                <line x1="6" y1="1" x2="6" y2="4" stroke-linecap="round" stroke-width="2"></line>
+                                <line x1="10" y1="1" x2="10" y2="4" stroke-linecap="round" stroke-width="2"></line>
+                                <line x1="14" y1="1" x2="14" y2="4" stroke-linecap="round" stroke-width="2"></line>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-900 group-hover:text-white mb-2">Coffee Break (Coff-B)</h3>
+                        <p class="text-gray-500 group-hover:text-orange-100 text-sm leading-relaxed">Ruang santai untuk berkongsi idea pantas secara spontan bagi warga JPA.</p>
+                    </div>
+                </a>
+
+                <a href="{{ route('quiz') }}" wire:navigate class="flex group">
+                    <div class="group bg-white p-8 rounded-[2rem] shadow-xl shadow-gray-200/50 border border-gray-50 hover:bg-purple-500 transition-all duration-500 transform hover:-translate-y-2">
+                         <div class="w-14 h-14 bg-purple-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-purple-500 transition">
+                             <svg class="w-7 h-7 text-purple-600 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.364-6.364l-.707-.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M12 21V3"></path></svg>
+                         </div>
+                         <h3 class="text-xl font-bold text-gray-900 group-hover:text-white mb-2">Kuiz Inovasi</h3>
+                         <p class="text-gray-500 group-hover:text-purple-100 text-sm leading-relaxed">Uji tahap pengetahuan anda mengenai teknologi terkini.</p>
+                    </div>
+                </a>
+
+                <a href="{{ route('entries')}}" wire:navigate class="flex group">
+                    <div class="group bg-white p-8 rounded-[2rem] shadow-xl shadow-gray-200/50 border border-gray-50 hover:bg-green-600 transition-all duration-500 transform hover:-translate-y-2">
+                        <div class="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-green-500 transition">
+                            <svg class="w-7 h-7 text-green-600 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-900 group-hover:text-white mb-2">Penyertaan Pertandingan</h3>
+                        <p class="text-gray-500 group-hover:text-green-100 text-sm leading-relaxed">Sertai komuniti dengan menghantar inovasi anda sendiri.</p>
+                    </div>
                 </a>
             </div>
-        </div>
-    </header>
-
-    <section class="relative mx-auto max-w-7xl px-6" style="margin-top: -100px; z-index: 30;">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <a href="{{ route('archive') }}" wire:navigate class="flex group">
-                <div class="bg-white p-8 rounded-[2rem] shadow-xl shadow-gray-200/50 border border-gray-50 hover:bg-blue-600 transition-all duration-500 transform hover:-translate-y-2 h-full">
-                    <div class="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-blue-500 transition">
-                        <svg class="w-7 h-7 text-blue-600 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path>
-                        </svg>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-900 group-hover:text-white mb-2">Arkib Inovasi</h3>
-                    <p class="text-gray-500 group-hover:text-blue-100 text-sm leading-relaxed">Himpunan projek kreatif yang telah berjaya dilaksanakan.</p>
-                </div>
-            </a>
-            <a href="{{ route('coff-b') }}" wire:navigate class="flex group">
-                <div class="group bg-white p-8 rounded-[2rem] shadow-xl shadow-gray-200/50 border border-gray-50 hover:bg-orange-500 transition-all duration-500 transform hover:-translate-y-2">
-                    <div class="w-14 h-14 bg-orange-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-orange-400 transition">
-                        <svg class="w-7 h-7 text-orange-600 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"></path>
-                            <line x1="6" y1="1" x2="6" y2="4" stroke-linecap="round" stroke-width="2"></line>
-                            <line x1="10" y1="1" x2="10" y2="4" stroke-linecap="round" stroke-width="2"></line>
-                            <line x1="14" y1="1" x2="14" y2="4" stroke-linecap="round" stroke-width="2"></line>
-                        </svg>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-900 group-hover:text-white mb-2">Coffee Break (Coff-B)</h3>
-                    <p class="text-gray-500 group-hover:text-orange-100 text-sm leading-relaxed">Ruang santai untuk berkongsi idea pantas secara spontan bagi warga JPA.</p>
-                </div>
-            </a>
-
-            <a href="{{ route('quiz') }}" wire:navigate class="flex group">
-                <div class="group bg-white p-8 rounded-[2rem] shadow-xl shadow-gray-200/50 border border-gray-50 hover:bg-purple-500 transition-all duration-500 transform hover:-translate-y-2">
-                    <div class="w-14 h-14 bg-purple-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-purple-500 transition">
-                        <svg class="w-7 h-7 text-purple-600 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.364-6.364l-.707-.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M12 21V3"></path></svg>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-900 group-hover:text-white mb-2">Kuiz Inovasi</h3>
-                    <p class="text-gray-500 group-hover:text-purple-100 text-sm leading-relaxed">Uji tahap pengetahuan anda mengenai teknologi terkini.</p>
-                </div>
-            </a>
-
-            <a href="{{ route('entries')}}" wire:navigate class="flex group">
-                <div class="group bg-white p-8 rounded-[2rem] shadow-xl shadow-gray-200/50 border border-gray-50 hover:bg-green-600 transition-all duration-500 transform hover:-translate-y-2">
-                    <div class="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-green-500 transition">
-                        <svg class="w-7 h-7 text-green-600 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-900 group-hover:text-white mb-2">Penyertaan Pertandingan</h3>
-                    <p class="text-gray-500 group-hover:text-green-100 text-sm leading-relaxed">Sertai komuniti dengan menghantar inovasi anda sendiri.</p>
-                </div>
-            </a>
-        </div>
-    </section>
+        </section>
 
         <main id="explore" class="relative z-10 max-w-7xl mx-auto px-6 pt-20 pb-32">
             <div class="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16">
@@ -154,46 +162,121 @@ $checkAnswer = function ($key) {
                                 <span class="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
                             </span>
                             <span class="text-[9px] font-black uppercase tracking-[0.15em]">Jangan Terlepas</span>
-                         </div>
-                     </div>
+                        </div>
+                    </div>
 
                     <h3 class="text-3xl md:text-3xl font-black text-stone-900 tracking-tighter leading-[0.85]">
                         Acara Akan
                         <span class="text-blue-600 italic font-serif">Datang</span>
                     </h3>
                 </div>
-                <div class="pb-2">
-                    <a href="#" class="group flex items-center gap-2 px-4 py-2 rounded-full hover:bg-blue-50 transition-all duration-300">
-                        <span class="text-[11px] font-black uppercase tracking-widest text-stone-500 group-hover:text-blue-600">Lihat Semua</span>
-                        <svg class="w-4 h-4 text-stone-400 group-hover:text-blue-600 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+
+                @if($programs->isNotEmpty())
+                <div class="flex justify-end items-center gap-3 mb-6 px-2">
+                    <button onclick="scrollSlider('left')" class="p-3 bg-white border border-gray-100 text-gray-700 hover:bg-orange-500 hover:text-white hover:border-orange-500 rounded-2xl shadow-sm transition duration-300 group">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
                         </svg>
-                    </a>
+                    </button>
+                    <button onclick="scrollSlider('right')" class="p-3 bg-white border border-gray-100 text-gray-700 hover:bg-orange-500 hover:text-white hover:border-orange-500 rounded-2xl shadow-sm transition duration-300 group">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+                        </svg>
+                    </button>
                 </div>
+                @endif
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-                 <div class="group bg-white rounded-[2.5rem] shadow-sm overflow-hidden border border-gray-100 hover:shadow-2xl transition-all duration-500">
+            <div id="programSlider" class="@if($programs->isNotEmpty()) flex space-x-8 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-8 pt-2 px-2 scrollbar-none @else grid grid-cols-1 w-full @endif">
+                @forelse($programs as $program)
+                <div class="group bg-white rounded-[2.5rem] shadow-sm overflow-hidden border border-gray-100 hover:shadow-2xl transition-all duration-500 w-[calc(100vw-3rem)] md:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.35rem)] shrink-0 snap-start">
                     <div class="relative h-64 overflow-hidden">
-                        <img src="{{ asset('images/Pertandingan.png') }}" class="w-full h-full object-cover transition duration-700 group-hover:scale-110">
-                        <div class="absolute top-6 left-6 bg-white/95 backdrop-blur px-4 py-2 rounded-2xl shadow-lg text-center">
-                            <span class="block text-xl font-black text-gray-900 leading-none">02</span>
-                            <span class="block text-[10px] font-bold text-orange-600 uppercase tracking-widest">Feb</span>
-                        </div>
-                    </div>
-                    <div class="p-10">
-                        <div class="flex items-center space-x-2 mb-4">
-                            <span class="px-3 py-1 bg-orange-50 text-orange-600 text-[10px] font-black uppercase rounded-full">Coffee Break</span>
-                            <span class="text-gray-400 text-[10px] font-bold uppercase tracking-widest">Bilik Mesyuarat 2</span>
-                        </div>
-                        <h3 class="text-xl font-extrabold text-gray-900 mb-4 leading-tight group-hover:text-orange-600 transition">Sesi Santai: Idea Coffee Break</h3>
-                        <p class="text-gray-500 text-sm line-clamp-2 leading-relaxed mb-8">Sesi perkongsian idea inovasi secara santai sambil menikmati kopi pagi.</p>
-                        <button class="w-full py-4 bg-gray-50 text-gray-900 rounded-2xl font-bold text-sm group-hover:bg-orange-500 group-hover:text-white transition duration-300">Sertai Kami</button>
-                    </div>
-                  </div>
+                        <img src="{{ asset('storage/' . $program->image_path) }}"
+                           class="w-full h-full object-cover object-top transition duration-700 group-hover:scale-110" />
 
+                        <div class="absolute top-6 left-6 bg-white/95 backdrop-blur px-4 py-2 rounded-2xl shadow-lg text-center">
+                              <span class="block text-xl font-black text-gray-900 leading-none">
+                                  {{ ($program->start_date && $program->start_date !== '0000-00-00') ? \Carbon\Carbon::parse($program->start_date)->format('d') : '--' }}
+                              </span>
+                              <span class="block text-[10px] font-bold text-orange-600 uppercase tracking-widest">
+                                  {{ ($program->start_date && $program->start_date !== '0000-00-00') ? \Carbon\Carbon::parse($program->start_date)->format('M') : 'TBD' }}
+                              </span>
+                        </div>
+                    </div>
+
+                    <div class="p-10">
+                       <div class="flex items-center space-x-2 mb-4">
+                            <span class="px-3 py-1 bg-orange-50 text-orange-600 text-[10px] font-black uppercase rounded-full">{{ $program->category->name ?? 'Tiada Kategori' }}</span>
+                            <span class="text-gray-400 text-[10px] font-bold uppercase tracking-widest">{{ $program->location ?? '' }}</span>
+                        </div>
+
+                        <h3 class="text-xl font-extrabold text-gray-900 mb-4 leading-tight group-hover:text-orange-600 transition line-clamp-1">
+                            {{ $program->title }}
+                        </h3>
+                        <p class="text-gray-500 text-sm line-clamp-2 leading-relaxed mb-8">{{ $program->description }}</p>
+
+                        @php
+                            $isClosed = $program->deadline ? \Carbon\Carbon::parse($program->deadline)->isPast() : false;
+                        @endphp
+
+                        @if($isClosed)
+                              <button class="w-full py-4 bg-gray-200 text-gray-400 rounded-2xl font-bold text-sm cursor-not-allowed" disabled>
+                                  Penyertaan Ditutup
+                              </button>
+                        @else
+                        @php
+                            $hasApplied = false;
+                            if (auth()->check()) {
+                                $hasApplied = auth()->user()->submissions()
+                                    ->where('program_id', $program->id)
+                                    ->exists();
+                            }
+                        @endphp
+                              @if(!auth()->check())
+                              <button class="w-full py-4 bg-gray-50 text-gray-900 rounded-2xl font-bold text-sm group-hover:bg-orange-500 group-hover:text-white transition duration-300">
+                                  Sertai Kami
+                              </button>
+                              @elseif($hasApplied)
+                              <button class="w-full py-4 bg-gray-200 text-gray-400 rounded-2xl font-bold text-sm cursor-not-allowed" disabled>
+                                  Telah sertai
+                              </button>
+                              @endif
+
+                        @endif
+                   </div>
+                </div>
+                @empty
+                <div class="w-full py-6">
+                   <div class="w-full bg-orange-50 border-2 border-dashed border-orange-200 rounded-3xl p-12 flex flex-col items-center text-center shadow-sm">
+                        <div class="p-4 bg-white text-orange-500 rounded-2xl mb-5 shadow-sm flex items-center justify-center w-20 h-20">
+                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12 animate-bounce">
+                                  <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5m-9-6h.008v.008H12v-.008ZM12 15h.008v.008H12V15Zm0 2.25h.008v.008H12v-.008ZM9.75 15h.008v.008H9.75V15Zm0 2.25h.008v.008H9.75v-.008ZM7.5 15h.008v.008H7.5V15Zm0 2.25h.008v.008H7.5v-.008Zm6.75-4.5h.008v.008H14.25v-.008Zm0 2.25h.008v.008H14.25V15Zm0 2.25h.008v.008H14.25v-.008Zm2.25-4.5h.008v.008H16.5v-.008Zm0 2.25h.008v.008H16.5V15Z" />
+                              </svg>
+                          </div>
+
+                          <h3 class="text-2xl font-bold text-orange-950 mb-3">Tiada Program Tersedia Buat Masa Ini</h3>
+                          <p class="text-orange-800/80 max-w-xl text-base leading-relaxed mx-auto">
+                               Sila semak semula seketika lagi atau hubungi pihak kami untuk maklumat lanjut mengenai jadual program akan datang.
+                          </p>
+                      </div>
+                </div>
+                @endforelse
             </div>
         </main>
+    </div>
+
+    <script>
+          function scrollSlider(direction) {
+              const slider = document.getElementById('programSlider');
+              const cardWidth = slider.querySelector('.group').offsetWidth + 32;
+
+              if (direction === 'left') {
+                  slider.scrollLeft -= cardWidth;
+              } else {
+                  slider.scrollLeft += cardWidth;
+              }
+           }
+    </script>
 
 
     <section id="info" class="relative py-24 bg-gray-50 overflow-hidden">
@@ -202,29 +285,26 @@ $checkAnswer = function ($key) {
 
         <div class="max-w-7xl mx-auto px-6 relative z-10">
             <div class="flex flex-col lg:flex-row items-center gap-16">
-                <div class="w-full lg:w-1/2 relative">
-                    <div class="relative z-10 rounded-[2.5rem] overflow-hidden shadow-2xl border-8 border-white">
-                        <img src="https://images.unsplash.com/photo-1522071823916-7c9759f59fce?q=80&w=2070"
-                         class="w-full h-[450px] object-cover"
-                         alt="Gambar">
-
-                    </div>
-                    <div class="absolute -bottom-6 -right-6 w-32 h-32 bg-blue-600 rounded-3xl -z-10 shadow-lg shadow-blue-200"></div>
-                    <div class="absolute -left-8 bottom-12 bg-white p-6 rounded-2xl shadow-xl hidden md:block">
-                        <div class="flex items-center space-x-4">
-                            <div class="flex -space-x-2">
-                                <div class="w-8 h-8 rounded-full bg-blue-500 border-2 border-white"></div>
-                                <div class="w-8 h-8 rounded-full bg-indigo-500 border-2 border-white"></div>
-                                <div class="w-8 h-8 rounded-full bg-cyan-500 border-2 border-white"></div>
-                            </div>
-                            <p class="text-[10px] font-bold text-gray-900 uppercase tracking-tighter italic leading-none">
-                            100+ Warga <br><span class="text-blue-600">Terlibat</span>
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="w-full lg:w-1/2">
+              <div class="w-full lg:w-1/2 relative overflow-visible p-6">
+                  <div class="relative z-10 rounded-[2.5rem] overflow-hidden shadow-2xl border-8 border-white">
+                      <img src="{{ asset('images/jpa.jpg') }}"
+                           class="w-full h-[450px] object-cover"
+                           alt="Gambar">
+                  </div>
+                  <div class="absolute -left-2 md:-left-4 bottom-16 bg-white p-6 rounded-2xl shadow-xl z-20">
+                      <div class="flex items-center space-x-4">
+                          <div class="flex -space-x-2">
+                              <div class="w-8 h-8 rounded-full bg-blue-500 border-2 border-white"></div>
+                              <div class="w-8 h-8 rounded-full bg-indigo-500 border-2 border-white"></div>
+                              <div class="w-8 h-8 rounded-full bg-cyan-500 border-2 border-white"></div>
+                          </div>
+                          <p class="text-[10px] font-bold text-gray-900 uppercase tracking-tighter italic leading-none">
+                              100+ Warga <br><span class="text-blue-600">Terlibat</span>
+                          </p>
+                      </div>
+                  </div>
+              </div>
+              <div class="w-full lg:w-1/2">
                     <span class="text-blue-600 font-bold text-xs uppercase tracking-[0.3em] mb-4 block">Mengenai Kami</span>
                     <h2 class="text-4xl font-bold text-gray-900 mb-6 tracking-tight">
                         Memacu Budaya <span class="text-blue-600 italic">Kreativiti</span> Dalam Organisasi.
@@ -248,7 +328,7 @@ $checkAnswer = function ($key) {
                         </div>
                     </div>
 
-                    <a href="#" class="inline-flex items-center px-8 py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-200 group">
+                    <a href="{{ route('info') }}" class="inline-flex items-center px-8 py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-200 group">
                         Ketahui Lebih Lanjut
                         <svg class="w-5 h-5 ml-2 transform group-hover:translate-x-1 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
                     </a>
@@ -257,11 +337,8 @@ $checkAnswer = function ($key) {
         </div>
     </section>
 
-
     <x-footer />
-
-
-    </div>
+</div>
 
     <div x-data="{ open: false }"
             x-init="setTimeout(() => open = true, 800)"
@@ -370,7 +447,6 @@ $checkAnswer = function ($key) {
                 </div>
             </div>
         </div>
-    </div>
 
 <style>
     .custom-scrollbar::-webkit-scrollbar {
@@ -384,7 +460,6 @@ $checkAnswer = function ($key) {
         border-radius: 10px;
     }
 </style>
-</div>
 
 
 <script>

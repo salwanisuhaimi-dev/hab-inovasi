@@ -25,6 +25,7 @@ Volt::route('/pitch', 'pages.pitch')->name('pitch');
 Volt::route('/testing', 'pages.testing')->name('testing');
 
 Volt::route('/faq', 'pages.faq')->name('faq');
+Volt::route('/info', 'pages.info')->name('info');
 Volt::route('/overview/{competition:slug}', 'pages.overview')->name('overview');
 
 /*

@@ -30,20 +30,20 @@ $quizzes = computed(function () {
     <div class="min-h-screen bg-[#faf7f2] text-[#4a3728] font-sans pb-20 overflow-x-hidden">
         <x-top-nav />
 
-        <div class="max-w-7xl mx-auto px-6"> 
+        <div class="max-w-7xl mx-auto px-6">
             <header class="my-5 quiz-gradient-header rounded-[50px] p-10 md:p-16 mb-16 shadow-2xl border-4 border-white/20 relative overflow-hidden text-white bg-gradient-to-br from-[#064e3b] to-[#022c22]">
-                <div class="absolute top-0 right-0 w-96 h-96 bg-emerald-500/10 rounded-full -mr-32 -mt-32 blur-[100px]"></div> 
+                <div class="absolute top-0 right-0 w-96 h-96 bg-emerald-500/10 rounded-full -mr-32 -mt-32 blur-[100px]"></div>
                 <div class="relative z-10 grid lg:grid-cols-2 gap-12 items-center">
                     <div class="space-y-6 text-center lg:text-left">
                         <div class="inline-flex items-center px-4 py-1.5 bg-emerald-600/30 border border-emerald-500/40 rounded-full">
                             <span class="text-emerald-300 text-[9px] font-black uppercase tracking-[0.3em]">UJI PENGETAHUAN</span>
                         </div>
-            
+
                         <div class="flex flex-col lg:flex-row items-center gap-6">
                             <!--<div class="relative flex-shrink-0 animate-float">
                                 <img src="/images/rocket.png" class="w-20 md:w-28 rotate-[-12deg] drop-shadow-2xl" alt="Rocket">
                             </div>-->
-                
+
                             <h1 class="text-5xl md:text-6xl font-black leading-tight tracking-tighter">
                                 Kuiz <span class="text-amber-500 italic">Inovasi</span>
                             </h1>
@@ -59,7 +59,7 @@ $quizzes = computed(function () {
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                             Terma & Syarat
                         </h3>
-            
+
                         <ul class="space-y-3">
                             <li class="flex items-start gap-3 text-sm text-emerald-50/80">
                                 <span class="text-amber-500 font-bold">•</span>
@@ -97,8 +97,8 @@ $quizzes = computed(function () {
                 animation: float 4s ease-in-out infinite;
             }
             </style>
-            
-            <div class="grid lg:grid-cols-12 gap-12">          
+
+            <div class="grid lg:grid-cols-12 gap-12">
                 <div class="lg:col-span-4 space-y-12">
                     <section class="bg-[#efebe9] rounded-[32px] p-8 border border-stone-200">
                         <h3 class="text-lg font-bold mb-6 flex items-center gap-2">
@@ -113,7 +113,7 @@ $quizzes = computed(function () {
                                     </span>
                                     <span class="text-lg font-black leading-none text-orange-600 group-hover:text-white">
                                         14
-                                    </span>                            
+                                    </span>
                                 </div>
                                 <div>
                                 <h4 class="text-sm font-bold text-stone-800">KUIZ INNOCTOBER</h4>
@@ -121,7 +121,7 @@ $quizzes = computed(function () {
                                 </div>
                             </div>
                             @empty
-                            <div class="py-12 flex flex-col items-center justify-center border-2 border-dashed border-stone-300 rounded-[24px] opacity-60">       
+                            <div class="py-12 flex flex-col items-center justify-center border-2 border-dashed border-stone-300 rounded-[24px] opacity-60">
                                 <svg class="w-10 h-10 text-stone-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M18.5 8V18a2 2 0 0 1-2 2h-10a2 2 0 0 1-2-2V8M15 11v-4a3 3 0 0 0-6 0v4M2 8h20" />
                                 </svg>
@@ -136,7 +136,7 @@ $quizzes = computed(function () {
                         <div class="absolute top-0 left-0 w-2 h-full bg-[#2d1b69]"></div>
                         <h2 class="text-2xl font-black italic mb-2 tracking-tighter">Leave a review</h2>
                         <p class="text-stone-400 text-[10px] mb-8 font-black uppercase tracking-[0.2em] italic">Maklum balas anda dihargai</p>
-                    
+
                         <div class="space-y-4">
                             <input type="text" placeholder="Nama Penuh" class="w-full p-5 rounded-2xl bg-[#faf7f2] border-none text-sm outline-none focus:ring-2 focus:ring-orange-600 transition-all">
                             <textarea rows="4" placeholder="Kongsikan pengalaman anda..." class="w-full p-5 rounded-2xl bg-[#faf7f2] border-none text-sm outline-none focus:ring-2 focus:ring-orange-600 transition-all"></textarea>
@@ -161,7 +161,7 @@ $quizzes = computed(function () {
                     </section>
                 </div>
 
-                <div class="lg:col-span-8 space-y-16"> 
+                <div class="lg:col-span-8 space-y-16">
                     <div class="grid grid-cols-1 gap-8 p-4">
                         <div class="flex items-center justify-between">
                             <h3 class="text-sm font-black text-stone-800 uppercase tracking-widest">Senarai Kuiz</h3>
@@ -188,7 +188,7 @@ $quizzes = computed(function () {
                                             Uji pengetahuan transformasi digital jabatan.
                                         </p>
                                     </div>
-            
+
                                     <div class="flex items-center gap-8">
                                         <div class="flex flex-col leading-tight">
                                             <span class="text-[10px] font-black text-[#c3b4df] uppercase tracking-widest">Masa</span>
@@ -226,10 +226,10 @@ $quizzes = computed(function () {
                             <div class="absolute top-10 left-10 text-purple-200 opacity-20 animate-bounce">❓</div>
                             <div class="absolute bottom-10 right-10 text-purple-200 opacity-20 animate-pulse">❓</div>
                         </div>
-                        @endforelse        
+                        @endforelse
                     </div>
-                </div>  
+                </div>
             </div>
         </div>
     </div>
-
+    <x-footer />

@@ -549,3 +549,5 @@ $vote = function (Pitch $pitch) {
         </div>
     </div>
 </div>
+
+<x-footer />

@@ -180,3 +180,5 @@ $availableYears = computed(function () {
   </div>
 
 </div>
+
+<x-footer />

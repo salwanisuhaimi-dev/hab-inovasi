@@ -15,6 +15,7 @@ $programs = computed(function () {
 });
 
 ?>
+<div>
 
 <style>
     .quiz-gradient-header {
@@ -28,8 +29,7 @@ $programs = computed(function () {
         animation: float 6s ease-in-out infinite;
     }
 </style>
-
-    <div class="min-h-screen bg-[#faf7f2] text-[#4a3728] font-sans pb-20 overflow-x-hidden">
+    <div class="min-h-screen bg-[#faf7f2] text-[#4a3728] font-sans overflow-x-hidden">
         <x-top-nav />
 
         <div class="max-w-7xl mx-auto px-6 py-10">
@@ -315,3 +315,6 @@ $programs = computed(function () {
             </div>
         </div>
     </div>
+    <x-footer />
+
+</div>
