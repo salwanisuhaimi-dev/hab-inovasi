@@ -58,6 +58,22 @@ $checkAnswer = function ($key) {
 ?>
 
 <div class="min-h-screen bg-[#f8fafc] relative">
+    <style>
+    @keyframes slideInUp {
+        0% {
+            transform: translateY(70px);
+            opacity: 0;
+        }
+        100% {
+            transform: translateY(0);
+            opacity: 1;                  
+        }
+    }
+
+    .animate-slide-in {
+        animation: slideInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    </style>
     <!--<div class="fixed inset-0 pointer-events-none" style="z-index: 0; overflow: hidden;">
         <div style="position: absolute; inset: 0; opacity: 0.35; background-image: radial-gradient(#334155 2px, transparent 2px); background-size: 40px 40px;"></div>
 
@@ -189,7 +205,10 @@ $checkAnswer = function ($key) {
 
             <div id="programSlider" class="@if($programs->isNotEmpty()) flex space-x-8 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-8 pt-2 px-2 scrollbar-none @else grid grid-cols-1 w-full @endif">
                 @forelse($programs as $program)
-                <div class="group bg-white rounded-[2.5rem] shadow-sm overflow-hidden border border-gray-100 hover:shadow-2xl transition-all duration-500 w-[calc(100vw-3rem)] md:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.35rem)] shrink-0 snap-start">
+                <div x-data="{ shown: false }"
+                      x-intersect.once="shown = true"
+                      class="group bg-white rounded-[2.5rem] shadow-sm overflow-hidden border border-gray-100 hover:shadow-2xl w-[calc(100vw-3rem)] md:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.35rem)] shrink-0 snap-start transform transition-all duration-700 ease-out"
+                      :class="shown ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'">
                     <div class="relative h-64 overflow-hidden">
                         <img src="{{ asset('storage/' . $program->image_path) }}"
                            class="w-full h-full object-cover object-top transition duration-700 group-hover:scale-110" />

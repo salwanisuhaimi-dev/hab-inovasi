@@ -71,6 +71,18 @@ $save = function () {
     $this->dispatch('review-added');
 };
 
+$delete = function ($id) {
+    $review = Review::find($id);
+
+    if ($review && $review->user_id === auth()->id()) {
+        $review->delete();
+
+        session()->flash('success', 'Ulasan anda telah dipadam!');
+
+        $this->dispatch('review-added');
+    }
+};
+
 ?>
 
 <div>
@@ -337,12 +349,29 @@ $save = function () {
                                             @endphp
                                             {{ $initials }}
                                         </div>
-                                        <div class="flex-1">
-                                          <h4 class="text-sm font-black text-stone-800 uppercase leading-none">
-                                              {{ \Illuminate\Support\Str::words($review->user->name, 2, '') }}
-                                          </h4>                                            <span class="text-[9px] text-stone-400 font-bold uppercase tracking-widest block mt-1">
-                                                {{ $review->created_at->diffForHumans() }}
-                                            </span>
+                                        <div class="flex-1 min-w-0">
+                                              <div class="flex items-center gap-2 flex-wrap">
+                                                   <h4 class="text-sm font-black text-stone-800 uppercase leading-none truncate">
+                                                        {{ \Illuminate\Support\Str::words($review->user->name, 2, '') }}
+                                                   </h4>
+
+                                                   @auth
+                                                        @if($review->user_id === auth()->id())
+                                                            <button type="button"
+                                                                     wire:click="delete({{ $review->id }})"
+                                                                     wire:confirm="Adakah anda pasti mahu memadam ulasan ini?"
+                                                                     class="text-stone-400 hover:text-red-500 transition-colors focus:outline-none p-0.5 rounded"
+                                                                     title="Padam Ulasan">
+                                                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5">
+                                                                       <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.34 9m-4.72 0-.34-9m9.96-3.24l-.81 10.63a2.25 2.25 0 0 1-2.24 2.25H8.55a2.25 2.25 0 0 1-2.24-2.25L5.5 5.76M19.5 5.76A10.5 10.5 0 0 0 4.5 5.76M10.5 3.5h3" />
+                                                                  </svg>
+                                                             </button>
+                                                          @endif
+                                                    @endauth
+                                                </div>
+                                                <span class="text-[9px] text-stone-400 font-bold uppercase tracking-widest block mt-1">
+                                                      {{ $review->created_at->diffForHumans() }}
+                                                </span>
                                         </div>
 
                                         <div class="flex gap-0.5 text-orange-500 text-lg leading-none select-none">

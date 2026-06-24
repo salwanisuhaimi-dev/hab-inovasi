@@ -1,11 +1,17 @@
 <?php
 
 use App\Models\Submission;
+use App\Models\Review;
 use function Livewire\Volt\{layout, state, computed};
 
 layout('layouts.landing');
 
-state(['openIndex' => null]);
+state([
+  'openIndex' => null,
+  'page_name' => '',
+  'body' => '',
+  'rating' => 5,
+]);
 
 $programs = computed(function () {
     return \App\Models\Program::whereIn('category_id', [1, 4, 5])
@@ -13,6 +19,48 @@ $programs = computed(function () {
         ->latest()
         ->get();
 });
+
+$reviews = computed(function () {
+    return Review::query()
+        ->with(['user'])
+        ->where('page_name', 'entries')
+        ->latest()
+        ->limit(5)
+        ->get();
+});
+
+$save = function () {
+    $this->validate([
+      'body' => 'required|string|max:1000',
+      'rating' => 'required|integer|min:1|max:5',
+    ]);
+
+    Review::create([
+        'user_id' => auth()->id(),
+        'body' => $this->body,
+        'rating' => $this->rating,
+        'page_name' => 'entries',
+    ]);
+
+    $this->body = '';
+    $this->rating = 5;
+
+    session()->flash('success', 'Ulasan anda telah berjaya dihantar!');
+
+    $this->dispatch('review-added');
+};
+
+$delete = function ($id) {
+    $review = Review::find($id);
+
+    if ($review && $review->user_id === auth()->id()) {
+        $review->delete();
+
+        session()->flash('success', 'Ulasan anda telah dipadam!');
+
+        $this->dispatch('review-added');
+    }
+};
 
 ?>
 <div>
@@ -88,7 +136,7 @@ $programs = computed(function () {
             </header>
             <div class="grid lg:grid-cols-12 gap-12">
                 <div class="lg:col-span-4 space-y-12">
-                    <section class="bg-[#efebe9] rounded-[32px] p-8 border border-stone-200">
+                    <section class="bg-[#efebe9] rounded-[32px] p-8 border border-emerald-200">
                         <h3 class="text-lg font-bold mb-6 flex items-center gap-2">
                             <span class="bg-[#1b9a4c] text-white p-1 rounded-md text-xs italic">Akan Datang</span> Pertandingan
                         </h3>
@@ -104,56 +152,181 @@ $programs = computed(function () {
                                     </span>
                                 </div>
                                 <div>
-                                <h4 class="text-sm font-bold text-stone-800">{{ Str::limit($program->title, 30, '...') }}</h4>
-                                <p class="text-[10px] text-stone-500 uppercase">{{\Carbon\Carbon::parse($program->start_time)->format('h:i A')}} • {{$program->location}}</p>
+                                <h4 class="text-sm font-bold text-emerald-800">{{ Str::limit($program->title, 30, '...') }}</h4>
+                                <p class="text-[10px] text-emerald-500 uppercase">{{\Carbon\Carbon::parse($program->start_time)->format('h:i A')}} • {{$program->location}}</p>
                                 </div>
                             </div>
                             @empty
-                            <div class="py-12 flex flex-col items-center justify-center border-2 border-dashed border-stone-300 rounded-[24px] opacity-60">
-                                <svg class="w-10 h-10 text-stone-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="py-12 flex flex-col items-center justify-center border-2 border-dashed border-emerald-300 rounded-[24px] opacity-60">
+                                <svg class="w-10 h-10 text-emerald-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M18.5 8V18a2 2 0 0 1-2 2h-10a2 2 0 0 1-2-2V8M15 11v-4a3 3 0 0 0-6 0v4M2 8h20" />
                                 </svg>
-                                <p class="text-[10px] font-black uppercase tracking-[0.2em] text-stone-500 italic">Tiada Pertandingan Dijadualkan</p>
-                                <p class="text-[9px] text-stone-400 mt-1 uppercase">Sila semak semula kemudian</p>
+                                <p class="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500 italic">Tiada Pertandingan Dijadualkan</p>
+                                <p class="text-[9px] text-emerald-400 mt-1 uppercase">Sila semak semula kemudian</p>
                             </div>
                             @endforelse
                         </div>
                     </section>
 
-                    <section class="bg-white rounded-[40px] p-10 shadow-xl shadow-stone-200 border border-stone-100 relative overflow-hidden">
+                    <section class="bg-white rounded-[40px] p-10 shadow-xl shadow-emerald-200 border border-emerald-100 relative overflow-hidden">
                         <div class="absolute top-0 left-0 w-2 h-full bg-[#1b9a4c]"></div>
                         <h2 class="text-2xl font-black italic mb-2 tracking-tighter">Leave a review</h2>
-                        <p class="text-stone-400 text-[10px] mb-8 font-black uppercase tracking-[0.2em] italic">Maklum balas anda dihargai</p>
+                        <p class="text-emerald-400 text-[10px] mb-8 font-black uppercase tracking-[0.2em] italic">Maklum balas anda dihargai</p>
 
-                        <div class="space-y-4">
-                            <input type="text" placeholder="Nama Penuh" class="w-full p-5 rounded-2xl bg-[#faf7f2] border-none text-sm outline-none focus:ring-2 focus:ring-orange-600 transition-all">
-                            <textarea rows="4" placeholder="Kongsikan pengalaman anda..." class="w-full p-5 rounded-2xl bg-[#faf7f2] border-none text-sm outline-none focus:ring-2 focus:ring-orange-600 transition-all"></textarea>
-                            <button class="w-full bg-[#1b9a4c] py-5 rounded-2xl text-white text-[10px] font-black uppercase tracking-[0.3em] shadow-lg hover:bg-[#2d1b69] transition-all">Hantar Sekarang</button>
-                        </div>
+                        @guest
+                            <div class="bg-[#faf7f2] rounded-2xl p-6 text-center border border-dashed border-emerald-200 flex flex-col items-center py-8">
+                                <div class="p-3 bg-green-50 text-green-600 rounded-2xl mb-3">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+                                    </svg>
+                                </div>
+                                <h4 class="text-sm font-bold text-emerald-800 mb-1">Log Masuk Diperlukan</h4>
+                                <p class="text-emerald-500 text-xs max-w-xs mb-5 leading-relaxed">Sila log masuk ke akaun anda terlebih dahulu untuk mula berkongsi ulasan atau pengalaman.</p>
+
+                                <a href="{{ route('login') }}?intended={{ urlencode(route('entries')) }}" class="inline-flex items-center gap-2 bg-[#3e2723] hover:bg-green-700 text-white font-bold text-xs px-6 py-3 rounded-xl transition-all shadow-md shadow-emerald-300">
+                                    <span>Log Masuk Sekarang</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3 h-3">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                                    </svg>
+                                </a>
+                            </div>
+                        @endguest
+
+                        @auth
+                            <form wire:submit.prevent="save" class="space-y-4">
+                                @if (session()->has('success'))
+                                  <div class="bg-green-50 border border-green-200 text-green-800 text-xs font-semibold p-4 rounded-2xl mb-4 flex items-center gap-2">
+                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4 text-green-600">
+                                          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                      </svg>
+                                      <span>{{ session('success') }}</span>
+                                  </div>
+                                @endif
+                                <div class="flex items-center gap-2 bg-[#faf7f2] px-4 py-2.5 rounded-xl border border-stone-100">
+                                    <div class="w-5 h-5 rounded-full bg-green-600 flex items-center justify-center text-[10px] text-white font-bold uppercase">
+                                        {{ substr(auth()->user()->name, 0, 1) }}
+                                    </div>
+                                    <span class="text-xs text-stone-600"><strong class="text-stone-900">{{ auth()->user()->name }}</strong></span>
+                                </div>
+
+                                <div>
+                                    <textarea
+                                        wire:model="body"
+                                        rows="4"
+                                        placeholder="Kongsikan sesuatu..."
+                                        class="w-full p-4 rounded-2xl bg-[#faf7f2] border-none focus:ring-2 focus:ring-green-600 outline-none text-sm placeholder:text-stone-400 transition-all">
+                                    </textarea>
+
+                                    @error('body')
+                                        <span class="text-red-500 text-xs mt-1 block px-1">{{ $message }}</span>
+                                    @enderror
+                                </div>
+
+                                <div class="bg-[#faf7f2] p-4 rounded-2xl border border-stone-100 flex flex-col gap-1">
+                                     <label class="text-xs font-bold text-stone-500 uppercase tracking-wider">Berikan Penilaian:</label>
+                                     <div class="flex items-center gap-1.5 mt-1">
+                                          @for ($i = 1; $i <= 5; $i++)
+                                          <button type="button"
+                                                  wire:click="$set('rating', {{ $i }})"
+                                                  class="transition-all duration-200 transform hover:scale-125 focus:outline-none">
+
+                                                <svg xmlns="http://www.w3.org/2000/svg"
+                                                         viewBox="0 0 24 24"
+                                                         class="w-7 h-7 {{ $i <= $rating ? 'fill-amber-400 text-amber-400' : 'fill-none text-stone-300' }} transition-colors"
+                                                         stroke="currentColor"
+                                                         stroke-width="1.5">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499c.172-.436.784-.436.956 0l2.22 4.473 4.925.711c.48.069.672.66.326 1.005l-3.567 3.477.842 4.902c.08.47-.417.83-.838.608L12 18.754l-4.418 2.322c-.42.22-.919-.139-.838-.608l.842-4.903-3.567-3.477c-.346-.345-.154-.936.326-1.005l4.925-.711 2.22-4.472Z" />
+                                                </svg>
+                                            </button>
+                                            @endfor
+
+                                            <span class="text-xs font-bold text-stone-600 ml-2">
+                                                  ({{ $rating }}/5)
+                                            </span>
+                                      </div>
+                                </div>
+
+                                <button type="submit" class="w-full bg-[#3e2723] hover:bg-green-700 text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-stone-300 flex items-center justify-center gap-2 group disabled:opacity-50" wire:loading.attr="disabled">
+                                    <span wire:loading.remove>Hantar</span>
+                                    <span wire:loading>Menghantar...</span>
+
+                                    <svg wire:loading.remove class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path d="M14 5l7 7m0 0l-7 7m7-7H3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </button>
+
+                            </form>
+                        @endauth
+
                     </section>
 
                     <section class="px-4 space-y-6">
                         <div class="flex items-center justify-between">
-                            <h3 class="text-sm font-black text-stone-800 uppercase tracking-widest">Komen</h3>
-                            <div class="h-[1px] flex-1 bg-stone-200 mx-4"></div>
+                            <h3 class="text-sm font-black text-emerald-800 uppercase tracking-widest">Komen</h3>
+                            <div class="h-[1px] flex-1 bg-emerald-200 mx-4"></div>
                         </div>
-                        @for ($i = 0; $i < 2; $i++)
-                        <div class="bg-white/60 p-6 rounded-[30px] border border-stone-100 relative">
+                        @forelse($this->reviews as $review)
+                        <div class="bg-white/60 p-6 rounded-[30px] border border-emerald-100 relative">
                             <div class="flex gap-4 items-center mb-3">
-                                <div class="w-8 h-8 rounded-lg bg-green-100 text-black-700 flex items-center justify-center font-black text-[10px]">NA</div>
-                                <span class="text-[10px] font-black uppercase text-stone-800 tracking-tight">Nurul Ain</span>
+                                <div class="w-8 h-8 rounded-lg bg-green-100 text-black-700 flex items-center justify-center font-black text-[10px]">
+                                  @php
+                                      $words = explode(' ', $review->user->name);
+                                      $initials = isset($words[1])
+                                          ? substr($words[0], 0, 1) . substr($words[1], 0, 1)
+                                          : substr($words[0], 0, 2);
+                                  @endphp
+                                  {{ $initials }}
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                      <div class="flex items-center gap-2 flex-wrap">
+                                           <h4 class="text-sm font-black text-stone-800 uppercase leading-none truncate">
+                                                {{ \Illuminate\Support\Str::words($review->user->name, 2, '') }}
+                                           </h4>
+
+                                           @auth
+                                                @if($review->user_id === auth()->id())
+                                                    <button type="button"
+                                                             wire:click="delete({{ $review->id }})"
+                                                             wire:confirm="Adakah anda pasti mahu memadam ulasan ini?"
+                                                             class="text-stone-400 hover:text-red-500 transition-colors focus:outline-none p-0.5 rounded"
+                                                             title="Padam Ulasan">
+                                                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5">
+                                                               <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.34 9m-4.72 0-.34-9m9.96-3.24l-.81 10.63a2.25 2.25 0 0 1-2.24 2.25H8.55a2.25 2.25 0 0 1-2.24-2.25L5.5 5.76M19.5 5.76A10.5 10.5 0 0 0 4.5 5.76M10.5 3.5h3" />
+                                                          </svg>
+                                                     </button>
+                                                  @endif
+                                            @endauth
+                                        </div>
+                                        <span class="text-[9px] text-stone-400 font-bold uppercase tracking-widest block mt-1">
+                                              {{ $review->created_at->diffForHumans() }}
+                                        </span>
+                                </div>
+                                <div class="flex gap-0.5 text-orange-500 text-lg leading-none select-none">
+                                    @for ($i = 1; $i <= 5; $i++)
+                                        @if ($i <= $review->rating)
+                                            <span class="text-amber-400">★</span>
+                                        @else
+                                            <span class="text-stone-200">★</span>
+                                        @endif
+                                    @endfor
+                                </div>
                             </div>
-                            <p class="text-xs text-stone-500 leading-relaxed italic">"Idea yang bernas untuk tingkatkan kualiti kerja!"</p>
+                            <p class="text-xs text-emerald-500 leading-relaxed italic">"{{ $review->body }}"</p>
                         </div>
-                        @endfor
+                        @empty
+                        <div class="text-center py-8 bg-[#faf7f2]/50 border border-dashed border-emerald-200 rounded-[32px] p-6">
+                            <p class="text-emerald-400 text-xs font-medium italic">Belum ada ulasan untuk halaman ini. Jadilah yang pertama memberikan maklum balas!</p>
+                        </div>
+
+                        @endforelse
                     </section>
                 </div>
 
                 <div class="lg:col-span-8 space-y-16">
                     <div class="grid grid-cols-1 gap-8 p-4">
                         <div class="flex items-center justify-between">
-                            <h3 class="text-sm font-black text-stone-800 uppercase tracking-widest">Senarai Pertandingan</h3>
-                            <div class="h-[1px] flex-1 bg-stone-200 mx-4"></div>
+                            <h3 class="text-sm font-black text-emerald-800 uppercase tracking-widest">Senarai Pertandingan</h3>
+                            <div class="h-[1px] flex-1 bg-emerald-200 mx-4"></div>
                         </div>
                         <div class="flex flex-col gap-4 w-full">
                         @forelse($this->programs as $program)
@@ -273,7 +446,7 @@ $programs = computed(function () {
                                                 Sertai
                                             </a>
                                         @endif
-                                    </div>
+                                      </div>
                                 </div>
                             </div>
                         </div>
