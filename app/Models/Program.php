@@ -30,6 +30,7 @@ class Program extends Model
         'start_time',
         'end_time',
         'location',
+        'submission_start_date',
         'deadline',
         'status',
         'image_path',

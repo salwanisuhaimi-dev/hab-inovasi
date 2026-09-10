@@ -11,14 +11,17 @@ state([
     'editing' => null,
     'name' => '',
     'is_active' => true,
+    'editable' => true,
     'requires_submission' => false,
     'submission_slug' => '',
 ]);
 
 $edit = function (ProgramType $programtype) {
+
     $this->editing = $programtype->id;
     $this->name = $programtype->name;
     $this->is_active = $programtype->is_active;
+    $this->editable = (bool) ($programtype->editable ?? true);
     $this->requires_submission = (bool) $programtype->requires_submission;
     $this->submission_slug = $programtype->submission_slug ?? '';
 
@@ -30,10 +33,11 @@ with([
 ]);
 
 $save = function () {
-    // Pengesahan dinamik: submission_slug wajib jika requires_submission = true
+
     $data = $this->validate([
         'name' => 'required|string|max:255',
         'is_active' => 'boolean',
+        'editable' => 'boolean',
         'requires_submission' => 'boolean',
         'submission_slug' => $this->requires_submission ? 'required|string|max:255' : 'nullable|string|max:255',
     ]);
@@ -41,6 +45,7 @@ $save = function () {
     $payload = [
         'name' => $this->name,
         'is_active' => $this->is_active ?? true,
+        'editable' => $this->editable ?? true,
         'requires_submission' => $this->requires_submission,
         'submission_slug' => $this->requires_submission ? $this->submission_slug : null,
     ];
@@ -53,18 +58,27 @@ $save = function () {
         session()->flash('message', 'Kategori Program berjaya disimpan!');
     }
 
-    $this->reset(['editing', 'name', 'is_active', 'requires_submission', 'submission_slug']);
+    $this->reset(['editing', 'name', 'is_active', 'editable', 'requires_submission', 'submission_slug']);
     $this->showModal = false;
 };
 
 $delete = function ($id) {
-    ProgramType::find($id)->delete();
-    session()->flash('message', 'Kategori Program berjaya dipadam!');
+    $programtype = ProgramType::find($id);
+
+    if ($programtype) {
+        if (! ($programtype->editable ?? true)) {
+            session()->flash('message', 'Kategori sistem ini tidak boleh dipadam!');
+            return;
+        }
+        $programtype->delete();
+        session()->flash('message', 'Kategori Program berjaya dipadam!');
+    }
 };
 
 $openCreateModal = function() {
     $this->reset(['editing', 'name', 'requires_submission', 'submission_slug']);
     $this->is_active = true;
+    $this->editable = true;
     $this->showModal = true;
 };
 
@@ -96,6 +110,7 @@ $openCreateModal = function() {
                 <tr>
                     <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest">Nama</th>
                     <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest">Terima Penyertaan</th>
+                    <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest">Edit Penyertaan</th>
                     <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest">Link Penyertaan</th>
                     <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest text-right">Tindakan</th>
                 </tr>
@@ -114,34 +129,42 @@ $openCreateModal = function() {
                             @endif
                         </td>
                         <td class="px-6 py-4">
+                            @if($programtype->editable ?? true)
+                                <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold">Boleh Edit</span>
+                            @else
+                                <span class="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold">Tidak Boleh Edit</span>
+                            @endif
+                        </td>
+
+                        <td class="px-6 py-4">
                             <code class="text-xs bg-gray-100 px-2 py-1 rounded text-gray-700 font-mono">
                                 {{ $programtype->submission_slug ?? '-' }}
                             </code>
                         </td>
                         <td class="px-6 py-4 text-right whitespace-nowrap">
                             <div class="flex justify-end gap-3">
-                                <button wire:click="edit({{ $programtype->id }})"
-                                    class="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors group"
-                                    title="Edit Kategori">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                    </svg>
-                                </button>
+                                    <button wire:click="edit({{ $programtype->id }})"
+                                        class="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors group"
+                                        title="Edit Kategori">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                        </svg>
+                                    </button>
 
-                                <button wire:click="delete({{ $programtype->id }})"
-                                    wire:confirm="Adakah anda pasti mahu memadam Kategori ini?"
-                                    class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                    title="Padam Kategori">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                    </svg>
-                                </button>
+                                    <button wire:click="delete({{ $programtype->id }})"
+                                        wire:confirm="Adakah anda pasti mahu memadam Kategori ini?"
+                                        class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                        title="Padam Kategori">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                        </svg>
+                                    </button>
                             </div>
                         </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="4" class="px-6 py-12 text-center text-gray-400 italic">Tiada kategori ditemui. Sila tambah kategori baru.</td>
+                        <td colspan="5" class="px-6 py-12 text-center text-gray-400 italic">Tiada kategori ditemui. Sila tambah kategori baru.</td>
                     </tr>
                 @endforelse
             </tbody>
@@ -173,7 +196,17 @@ $openCreateModal = function() {
                             </label>
                         </div>
 
-                        {{-- Medan Submission Slug (Hanya muncul jika requires_submission = true) --}}
+                        {{-- Toggle Editable --}}
+                        <div class="pt-2">
+                            <label class="flex items-center gap-3 cursor-pointer">
+                                <input type="checkbox" wire:model="editable" class="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                <span class="text-sm font-bold text-gray-700">Penyertaan Boleh Dikemaskini (Editable)?</span>
+                            </label>
+                            <p class="text-[11px] text-gray-400 mt-0.5">Nyahaktifkan jika kategori ini tidak membolehkan penyertaan untuk dikemaskini.</p>
+                        </div>
+
+
+                        {{-- Medan Submission Slug --}}
                         @if($requires_submission)
                             <div class="pt-2">
                                 <label class="block text-xs font-black text-gray-400 uppercase mb-1">Submission Slug <span class="text-red-500">*</span></label>

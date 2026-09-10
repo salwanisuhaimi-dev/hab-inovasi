@@ -5,18 +5,42 @@ use App\Models\Submission;
 use App\Models\GeneralSubmission;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use function Livewire\Volt\{state, mount, usesFileUploads};
 
 usesFileUploads();
 
 state([
     'program' => null,
+    'submission' => null,
+    'submissionId' => null,
     'user_notes' => '',
     'user_file' => null,
+    'existing_file_path' => null,
 ]);
 
-mount(function (Program $program) {
+mount(function (Program $program, Submission $submission = null) {
     $this->program = $program;
+
+    // 1. Dapatkan rekod penyerahan pengguna jika wujud
+    if (!$submission || !$submission->exists) {
+        $submission = Submission::where('user_id', Auth::id())
+            ->where('program_id', $program->id)
+            ->first();
+    }
+
+    // 2. Isi semula data ke dalam state (Hydrate) jika mod Kemaskini
+    if ($submission && $submission->exists) {
+        $this->submission = $submission;
+        $this->submissionId = $submission->id;
+
+        $generalDetail = GeneralSubmission::where('submission_id', $submission->id)->first();
+
+        if ($generalDetail) {
+            $this->user_notes = $generalDetail->notes ?? '';
+            $this->existing_file_path = $generalDetail->file_path ?? null;
+        }
+    }
 });
 
 $submit = function () {
@@ -24,8 +48,12 @@ $submit = function () {
 
     // 1. Pengesahan dinamik mengikut format pilihan Admin
     if ($format === 'upload_form') {
+        $fileRule = ($this->user_file || !$this->existing_file_path)
+            ? 'required|file|max:10240|mimetypes:application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/jpeg,image/png,application/zip'
+            : 'nullable';
+
         $this->validate([
-            'user_file' => 'required|file|max:10240|mimetypes:application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/jpeg,image/png,application/zip',
+            'user_file' => $fileRule,
             'user_notes' => 'nullable|string|max:1000',
         ]);
     } else {
@@ -34,27 +62,68 @@ $submit = function () {
         ]);
     }
 
-    // 2. Simpan fail jika peserta muat naik dokumen
-    $filePath = null;
+    $newFilePath = null;
     if ($this->user_file) {
-        $filePath = $this->user_file->store('user_submissions', 'public');
+        $newFilePath = $this->user_file->store('user_submissions', 'public');
     }
 
-    // 3. Cipta rekod penyerahan utama dalam jadual `submissions`
-    $newSubmission = Submission::create([
-        'program_id' => $this->program->id,
-        'user_id'    => Auth::id(),
-    ]);
+    try {
+        DB::transaction(function () use ($newFilePath) {
+            if ($this->submissionId) {
+                // MOD KEMASKINI (UPDATE)
+                $submission = Submission::findOrFail($this->submissionId);
+                $generalDetail = GeneralSubmission::where('submission_id', $submission->id)->first();
 
-    // 4. Cipta rekod butiran dalam jadual `generic_submissions`
-    GeneralSubmission::create([
-        'submission_id' => $newSubmission->id,
-        'notes'         => $this->user_notes,
-        'file_path'     => $filePath,
-    ]);
+                $finalFilePath = $generalDetail ? $generalDetail->file_path : null;
 
+                // Padam fail lama jika fail baharu dimuat naik
+                if ($newFilePath) {
+                    if ($finalFilePath && Storage::disk('public')->exists($finalFilePath)) {
+                        Storage::disk('public')->delete($finalFilePath);
+                    }
+                    $finalFilePath = $newFilePath;
+                }
 
-    session()->flash('success', 'Penyertaan anda telah berjaya dihantar!');
+                if ($generalDetail) {
+                    $generalDetail->update([
+                        'notes'     => $this->user_notes,
+                        'file_path' => $finalFilePath,
+                    ]);
+                } else {
+                    GeneralSubmission::create([
+                        'submission_id' => $submission->id,
+                        'notes'         => $this->user_notes,
+                        'file_path'     => $finalFilePath,
+                    ]);
+                }
+            } else {
+                // MOD PERMOHONAN BAHARU (CREATE)
+                $newSubmission = Submission::create([
+                    'program_id' => $this->program->id,
+                    'user_id'    => Auth::id(),
+                ]);
+
+                GeneralSubmission::create([
+                    'submission_id' => $newSubmission->id,
+                    'notes'         => $this->user_notes,
+                    'file_path'     => $newFilePath,
+                ]);
+
+                $this->submissionId = $newSubmission->id;
+            }
+        });
+
+    } catch (\Throwable $e) {
+        if ($newFilePath && Storage::disk('public')->exists($newFilePath)) {
+            Storage::disk('public')->delete($newFilePath);
+        }
+
+        session()->flash('error', 'Gagal menyimpan penyertaan. Sila cuba lagi.');
+        return;
+    }
+
+    $msg = $this->submissionId ? 'Penyertaan anda berjaya dikemaskini!' : 'Penyertaan anda telah berjaya dihantar!';
+    session()->flash('success', $msg);
 };
 ?>
 
@@ -63,11 +132,18 @@ $submit = function () {
     {{-- Header & Butang Kembali --}}
     <div class="mb-6 flex items-center justify-between">
         <div>
-            <h2 class="text-2xl font-black text-gray-900 tracking-tight">Borang Penyertaan Program</h2>
-            <div class="mt-1">
+            <h2 class="text-2xl font-black text-gray-900 tracking-tight">
+                {{ $submissionId ? 'Kemaskini Penyertaan Program' : 'Borang Penyertaan Program' }}
+            </h2>
+            <div class="mt-1 flex items-center gap-2">
                 <span class="px-3 py-1 bg-blue-100 text-blue-700 text-[10px] font-black uppercase rounded-full">
                     {{ $program->title }}
                 </span>
+                @if($submissionId)
+                    <span class="px-3 py-1 bg-amber-100 text-amber-700 text-[10px] font-black uppercase rounded-full">
+                        Kemaskini
+                    </span>
+                @endif
             </div>
         </div>
         <a href="{{ route('user.dashboard') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition">
@@ -78,6 +154,12 @@ $submit = function () {
     @if (session()->has('success'))
         <div class="mb-6 p-4 bg-green-50 border border-green-200 text-green-700 text-sm font-bold rounded-2xl flex items-center gap-2">
             {{ session('success') }}
+        </div>
+    @endif
+
+    @if (session()->has('error'))
+        <div class="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 text-sm font-bold rounded-2xl flex items-center gap-2">
+            {{ session('error') }}
         </div>
     @endif
 
@@ -114,8 +196,24 @@ $submit = function () {
                 <label class="block text-xs font-black text-gray-700 uppercase mb-2">
                     Muat Naik Borang Telah Diisi (PDF / Word) <span class="text-red-500">*</span>
                 </label>
+
+                {{-- Fail sedia ada dalam Mod Kemaskini --}}
+                @if($existing_file_path)
+                    <div class="mb-3 p-3 bg-blue-50 rounded-xl flex items-center justify-between border border-blue-100">
+                        <div class="flex items-center gap-2">
+                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <span class="text-xs font-bold text-blue-700">Fail Wujud: {{ basename($existing_file_path) }}</span>
+                        </div>
+                        <a href="{{ Storage::disk('public')->url($existing_file_path) }}" target="_blank" class="text-xs text-blue-600 underline font-semibold">Lihat Fail</a>
+                    </div>
+                @endif
+
                 <input type="file" wire:model="user_file" class="w-full text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-2xl p-3 focus:border-blue-500">
-                <p class="text-[11px] text-gray-400 mt-1">Maksimum saiz fail: 10MB (PDF, DOCX, Images, ZIP)</p>
+                <p class="text-[11px] text-gray-400 mt-1">
+                    {{ $existing_file_path ? 'Muat naik fail baharu di atas jika ingin menggantikan fail sedia ada.' : 'Maksimum saiz fail: 10MB (PDF, DOCX, Images, ZIP)' }}
+                </p>
                 @error('user_file') <span class="text-xs text-red-500 mt-1 block">{{ $message }}</span> @enderror
             </div>
         @endif
@@ -138,7 +236,7 @@ $submit = function () {
 
         {{-- Butang Hantar --}}
         <button type="submit" wire:loading.attr="disabled" class="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-black text-sm rounded-2xl shadow-lg shadow-blue-100 transition">
-            <span wire:loading.remove>Hantar Penyertaan</span>
+            <span wire:loading.remove>{{ $submissionId ? 'Kemaskini Penyertaan' : 'Hantar Penyertaan' }}</span>
             <span wire:loading>Sedang Memproses...</span>
         </button>
 

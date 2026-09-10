@@ -15,7 +15,10 @@ state([
 
 with([
   'programs' => fn() => Program::latest()
-      ->where('deadline', '>=', now())
+      ->where(function ($query) {
+      $query->whereDate('submission_start_date', '<=', now())
+            ->whereDate('deadline', '>=', now());
+      })      
       ->whereHas('category', function ($typeQuery) {
             $typeQuery->where('requires_submission', true);
       })

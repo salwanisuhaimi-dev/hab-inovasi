@@ -139,7 +139,7 @@ $downloadDocument = function () {
     }
 
     if (!Storage::disk('public')->exists($relativePath)) {
-        session()->flash('error', 'Fail tiada dalam storan.');
+        session()->flash('error', 'Fail tidak wujud.');
         return;
     }
 

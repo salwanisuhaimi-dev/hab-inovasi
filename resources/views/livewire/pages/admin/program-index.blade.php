@@ -26,6 +26,7 @@ state([
     'time_limit' => '',
     'location' => '',
     'description' => '',
+    'submission_start_date' => '',
     'deadline' => '',
     'image' => null,
     'currentImage' => '',
@@ -39,12 +40,42 @@ state([
     'existing_submission_pdf_form' => null,
     'showGlobalHistory' => false,
 
+    // Sync Checkbox Toggles
+    'same_as_start_date' => false,
+    'same_as_end_date' => false,
+
     // Visibility Settings
     'visibility_type' => 'all', // 'all' or 'program_participants'
     'target_program_id' => '',  // Bound to the single select dropdown in UI
-
-
 ]);
+
+// Auto sync when "Sama seperti tarikh mula program" is toggled
+$updatedSameAsStartDate = function ($value) {
+    if ($value && $this->start_date) {
+        $this->submission_start_date = $this->start_date;
+    }
+};
+
+// Auto sync when "Sama seperti tarikh akhir program" is toggled
+$updatedSameAsEndDate = function ($value) {
+    if ($value && $this->end_date) {
+        $this->deadline = $this->end_date;
+    }
+};
+
+// Auto sync when program start_date is changed while checkbox is checked
+$updatedStartDate = function ($value) {
+    if ($this->same_as_start_date) {
+        $this->submission_start_date = $value;
+    }
+};
+
+// Auto sync when program end_date is changed while checkbox is checked
+$updatedEndDate = function ($value) {
+    if ($this->same_as_end_date) {
+        $this->deadline = $value;
+    }
+};
 
 $edit = function (Program $program) {
     $this->editing = $program->id;
@@ -59,11 +90,19 @@ $edit = function (Program $program) {
     $this->time_limit = $program->time_limit;
     $this->location = $program->location;
     $this->description = $program->description;
+    $this->submission_start_date = $program->submission_start_date;
     $this->deadline = $program->deadline;
     $this->currentImage = $program->image_path ?? '';
     $this->image = null;
     $this->competition_id = $program->competition_id;
     $this->created_by = $program->created_by;
+
+    // Check if dates match to auto-check checkboxes in edit mode
+    $this->same_as_start_date = $program->start_date && $program->submission_start_date
+        && ($program->start_date == $program->submission_start_date);
+
+    $this->same_as_end_date = $program->end_date && $program->deadline
+        && ($program->end_date == $program->deadline);
 
     // Visibility Hydration
     $this->visibility_type = $program->visibility_type ?? 'all';
@@ -75,14 +114,13 @@ $edit = function (Program $program) {
         $this->existing_submission_pdf_form = $program->submission_pdf_form ?? null;
     } else {
         // Reset jika bertukar ke kategori biasa
-        $this->other_submission_format = 'notes';
+        $this->other_submission_format = '';
         $this->submission_external_link = '';
         $this->existing_submission_pdf_form = null;
     }
 
     $this->submission_pdf_form = null;
     $this->showModal = true;
-
 };
 
 with([
@@ -117,6 +155,7 @@ $save = function () {
         'form_publication_id' => 'nullable',
         'description' => 'nullable',
         'start_date' => 'nullable|date',
+        'submission_start_date' => 'nullable|date',
         'deadline' => 'required|date',
         'end_date' => 'nullable|date|after_or_equal:start_date',
         'image' => 'nullable|image|max:10420',
@@ -155,16 +194,15 @@ $save = function () {
                         ? 'required|file|mimes:pdf,doc,docx|max:10240'
                         : 'nullable';
         }
+
+        $this->validate($rules);
     }
 
-    $this->validate($rules);
-
-    // 4. Pengendalian Muat Naik Fail PDF (Kategori 8)
+    // Pengendalian Muat Naik Fail PDF (Kategori 8)
     $pdfPath = $this->existing_submission_pdf_form;
 
     if ((int) $this->category_id === 8 && $this->other_submission_format === 'upload_form') {
         if ($this->submission_pdf_form instanceof \Illuminate\Http\UploadedFile) {
-            // Padam fail lama jika wujud apabila muat naik fail baharu
             if ($this->existing_submission_pdf_form && Storage::disk('public')->exists($this->existing_submission_pdf_form)) {
                 Storage::disk('public')->delete($this->existing_submission_pdf_form);
             }
@@ -183,6 +221,7 @@ $save = function () {
         'time_limit' => $this->time_limit ?: null,
         'location' => $this->location ?: null,
         'description' => $this->description ?: null,
+        'submission_start_date' => $this->submission_start_date ?: null,
         'deadline' => $this->deadline,
         'publication_id' => $this->publication_id ?: null,
         'form_publication_id' => $this->form_publication_id ?: null,
@@ -259,9 +298,10 @@ $delete = function ($id) {
 $openCreateModal = function() {
     $this->reset([
         'editing', 'title', 'start_date', 'end_date', 'start_time', 'end_time',
-        'time_limit', 'location', 'description', 'deadline', 'image', 'currentImage',
+        'time_limit', 'location', 'description', 'submission_start_date', 'deadline', 'image', 'currentImage',
         'category_id', 'publication_id', 'form_publication_id', 'competition_id',
-        'created_by', 'visibility_type', 'target_program_id'
+        'created_by', 'visibility_type', 'target_program_id',
+        'same_as_start_date', 'same_as_end_date'
     ]);
     $this->created_by = auth()->user()->id;
     $this->showModal = true;
@@ -475,14 +515,12 @@ $closeGlobalHistoryModal = function () {
             <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
                 <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" wire:click="$set('showModal', false)"></div>
 
-                {{-- Widened Modal Container (sm:max-w-4xl) --}}
                 <div class="inline-block align-bottom bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full p-8">
                     <h3 class="text-xl font-black text-gray-900 mb-6">
                         {{ $editing ? 'Kemaskini Program' : 'Tambah Program Baru' }}
                     </h3>
 
                     <form wire:submit.prevent="save">
-                        {{-- Two-Column Grid Shell --}}
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
                             {{-- 1. Tajuk Program (Full Width) --}}
@@ -525,7 +563,7 @@ $closeGlobalHistoryModal = function () {
                                           @error('other_submission_format') <span class="text-red-500 text-[10px] block mt-1">{{ $message }}</span> @enderror
                                      </div>
 
-                                     {{-- 2. INPUT PAUTAN URL (Hanya jika 'external_link' dipilih) --}}
+                                     {{-- 2. INPUT PAUTAN URL --}}
                                      @if($other_submission_format === 'external_link')
                                      <div class="pt-2">
                                           <label class="block text-xs font-black text-gray-700 uppercase mb-1">
@@ -553,10 +591,10 @@ $closeGlobalHistoryModal = function () {
                                                         <span class="text-xs font-bold text-gray-800 block">Fail Sedia Ada</span>
                                                         <span class="text-[10px] text-gray-400">Muat naik fail baharu di bawah jika mahu menggantikannya.</span>
                                                     </div>
-                                              </div>
-                                              <a href="{{ Storage::url($existing_submission_pdf_form) }}" target="_blank" class="px-3 py-1 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-xs font-bold transition">
+                                               </div>
+                                               <a href="{{ Storage::url($existing_submission_pdf_form) }}" target="_blank" class="px-3 py-1 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-xs font-bold transition">
                                                     Lihat Fail
-                                              </a>
+                                               </a>
                                           </div>
                                           @endif
 
@@ -566,10 +604,10 @@ $closeGlobalHistoryModal = function () {
                                               class="w-full text-sm text-gray-500 bg-white border border-gray-200 rounded-xl p-2.5 focus:border-blue-500">
                                               <p class="text-[10px] text-gray-400 mt-1">Maksimum saiz fail: 10MB (Format PDF, DOC, atau DOCX)</p>
                                           @error('submission_pdf_form') <span class="text-red-500 text-[10px] block mt-1">{{ $message }}</span> @enderror
-                                    </div>
-                                    @endif
-                              </div>
-                           @endif
+                                     </div>
+                                     @endif
+                                </div>
+                            @endif
 
                             {{-- 3. Pertandingan --}}
                             <div>
@@ -583,17 +621,17 @@ $closeGlobalHistoryModal = function () {
                                 @error('competition_id') <span class="text-red-500 text-[10px]">{{ $message }}</span> @enderror
                             </div>
 
-                            {{-- 4. Tarikh Mula --}}
+                            {{-- 4. Tarikh Mula Program --}}
                             <div>
                                 <label class="block text-xs font-black text-gray-400 uppercase mb-1">Tarikh Mula Program</label>
-                                <input type="date" wire:model="start_date" class="w-full rounded-xl border-gray-200 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                <input type="date" wire:model.live="start_date" class="w-full rounded-xl border-gray-200 focus:ring-blue-500 focus:border-blue-500 text-sm">
                                 @error('start_date') <span class="text-red-500 text-[10px]">{{ $message }}</span> @enderror
                             </div>
 
-                            {{-- 5. Tarikh Tamat --}}
+                            {{-- 5. Tarikh Tamat Program --}}
                             <div>
                                 <label class="block text-xs font-black text-gray-400 uppercase mb-1">Tarikh Tamat Program</label>
-                                <input type="date" wire:model="end_date" class="w-full rounded-xl border-gray-200 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                <input type="date" wire:model.live="end_date" class="w-full rounded-xl border-gray-200 focus:ring-blue-500 focus:border-blue-500 text-sm">
                                 @error('end_date') <span class="text-red-500 text-[10px]">{{ $message }}</span> @enderror
                             </div>
 
@@ -609,7 +647,7 @@ $closeGlobalHistoryModal = function () {
                                 <input type="time" wire:model="end_time" class="w-full rounded-xl border-gray-200 text-sm">
                             </div>
 
-                            {{-- 8. Had Masa Kuiz (Conditional - Full Width) --}}
+                            {{-- 8. Had Masa Kuiz --}}
                             @if($category_id == 3)
                                 <div class="md:col-span-2" x-data="{ show: false }"
                                      x-init="setTimeout(() => show = true, 50)"
@@ -642,27 +680,57 @@ $closeGlobalHistoryModal = function () {
                                 </div>
                             @endif
 
-                            {{-- 9. Tarikh Tutup Penyertaan --}}
+                            {{-- 9. Tarikh Mula Penyertaan --}}
                             <div>
-                                <label class="block text-xs font-black text-gray-400 uppercase mb-1">Tarikh Tutup Penyertaan</label>
-                                <input type="date" wire:model="deadline" class="w-full rounded-xl border-gray-200 text-sm">
+                                <div class="flex items-center justify-between mb-1">
+                                    <label class="block text-xs font-black text-gray-400 uppercase">Tarikh Mula Penyertaan</label>
+                                </div>
+                                <input type="date"
+                                       wire:model="submission_start_date"
+                                       @if($same_as_start_date) disabled @endif
+                                       class="w-full rounded-xl border-gray-200 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed">
+                                       <label class="flex items-center gap-1.5 cursor-pointer">
+                                           <input type="checkbox"
+                                                  wire:model.live="same_as_start_date"
+                                                  class="w-3.5 h-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                           <span class="text-[11px] text-gray-500 font-semibold">Sama seperti tarikh mula program</span>
+                                       </label>
+
+                                @error('submission_start_date') <span class="text-red-500 text-[10px]">{{ $message }}</span> @enderror
+                            </div>
+
+                            {{-- 10. Tarikh Tutup Penyertaan (Deadline) --}}
+                            <div>
+                                <div class="flex items-center justify-between mb-1">
+                                    <label class="block text-xs font-black text-gray-400 uppercase">Tarikh Tutup Penyertaan</label>
+                                </div>
+                                <input type="date"
+                                       wire:model="deadline"
+                                       @if($same_as_end_date) disabled @endif
+                                       class="w-full rounded-xl border-gray-200 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed">
+                                       <label class="flex items-center gap-1.5 cursor-pointer">
+                                           <input type="checkbox"
+                                                  wire:model.live="same_as_end_date"
+                                                  class="w-3.5 h-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                           <span class="text-[11px] text-gray-500 font-semibold">Sama seperti tarikh akhir program</span>
+                                       </label>
                                 @error('deadline') <span class="text-red-500 text-[10px]">{{ $message }}</span> @enderror
                             </div>
 
-                            {{-- 10. Lokasi --}}
+                            {{-- 11. Lokasi --}}
                             <div>
                                 <label class="block text-xs font-black text-gray-400 uppercase mb-1">Lokasi</label>
                                 <input type="text" wire:model="location" placeholder="Contoh: Dewan Mezzanine" class="w-full rounded-xl border-gray-200 text-sm">
                             </div>
 
-                            {{-- 11. Penerangan (Full Width) --}}
+                            {{-- 12. Penerangan (Full Width) --}}
                             <div class="md:col-span-2">
                                 <label class="block text-xs font-black text-gray-400 uppercase mb-1">Penerangan</label>
                                 <textarea wire:model="description" rows="2" placeholder="Berikan sedikit ringkasan tentang program ini..." class="w-full bg-slate-50 border-gray-200 rounded-xl p-3 text-sm font-medium focus:ring-2 focus:ring-blue-500 transition-all"></textarea>
                                 @error('description') <span class="text-red-500 text-[10px] font-bold mt-1 block">{{ $message }}</span> @enderror
                             </div>
 
-                            {{-- 12. Dokumen Garis Panduan --}}
+                            {{-- 13. Dokumen Garis Panduan --}}
                             <div>
                                 <label class="block text-xs font-black text-gray-400 uppercase mb-1">Pilih Dokumen Garis Panduan</label>
                                 <select wire:model="publication_id" class="w-full rounded-xl border-gray-200 focus:border-blue-500 focus:ring-blue-500 text-sm p-2.5">
@@ -673,7 +741,7 @@ $closeGlobalHistoryModal = function () {
                                 </select>
                             </div>
 
-                            {{-- 13. Dokumen Borang Permohonan --}}
+                            {{-- 14. Dokumen Borang Permohonan --}}
                             <div>
                                 <label class="block text-xs font-black text-gray-400 uppercase mb-1">Pilih Borang Permohonan</label>
                                 <select wire:model="form_publication_id" class="w-full rounded-xl border-gray-200 focus:border-blue-500 focus:ring-blue-500 text-sm p-2.5">
@@ -684,7 +752,7 @@ $closeGlobalHistoryModal = function () {
                                 </select>
                             </div>
 
-                            {{-- 14. HAD AKSES / VISIBILITY SECTION (Full Width) --}}
+                            {{-- 15. HAD AKSES / VISIBILITY SECTION (Full Width) --}}
                             <div class="md:col-span-2 border-t pt-4">
                                 <label class="block text-xs font-black text-gray-400 uppercase mb-1">Had Akses (Visibility)</label>
                                 <p class="text-xs text-gray-500 mb-3">Tentukan siapa yang dibenarkan untuk melihat dan menghantar permohonan.</p>
@@ -727,7 +795,7 @@ $closeGlobalHistoryModal = function () {
                                 </div>
                             @endif
 
-                            {{-- 15. POSTER / GAMBAR PERTANDINGAN (Centered Compact) --}}
+                            {{-- 16. POSTER / GAMBAR PERTANDINGAN (Centered Compact) --}}
                             <div class="md:col-span-2 border-t pt-4 text-center">
                                 <label class="block text-xs font-black text-gray-400 uppercase mb-3">Poster / Gambar Pertandingan</label>
 
@@ -793,6 +861,7 @@ $closeGlobalHistoryModal = function () {
             </div>
         </div>
     @endif
+
     <!-- Global Activity Log Modal -->
     @if ($showGlobalHistory)
         <div class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
