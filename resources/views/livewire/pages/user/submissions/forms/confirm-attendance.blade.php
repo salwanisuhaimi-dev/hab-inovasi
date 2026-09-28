@@ -189,6 +189,17 @@ $downloadDocument = function () {
         </div>
     </div>
 
+    <div class="mb-6 flex items-center justify-between">
+        <a href="{{ url()->previous() !== url()->current() ? url()->previous() : route('user.dashboard') }}"
+           class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-bold rounded-xl transition duration-200 group">
+            <svg class="w-4 h-4 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+            </svg>
+            Kembali
+        </a>
+    </div>
+
+
     @if($myProjectSubmission && $myProjectSubmission->projectDetail)
         <div class="mb-6 p-4 bg-purple-50 border border-purple-200 rounded-2xl">
             <h3 class="text-xs font-bold text-purple-700 uppercase tracking-wider mb-2">

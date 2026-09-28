@@ -2,7 +2,8 @@
 
 use App\Models\CoffeeBreakSession;
 use App\Models\Department;
-use function Livewire\Volt\{layout, state, with, usesFileUploads, mount};
+use function Livewire\Volt\{layout, state, with, usesFileUploads, mount,updated};
+use App\Exports\CoffBSessionExport;
 
 layout('layouts.app');
 usesFileUploads();
@@ -18,7 +19,40 @@ state([
     'description' => '',
     'showDetailModal' => false,
     'viewingArchive' => null,
+    'date_from' => '',
+    'date_to' => '',
+    'selectedQuarter' => '',
+    'selectedDepartment' => '',
+
 ]);
+
+updated(['selectedQuarter' => function ($value) {
+    if (!empty($value)) {
+        $year = date('Y');
+
+        switch ($value) {
+            case 'Q1':
+                $this->date_from = "{$year}-01-01";
+                $this->date_to   = "{$year}-03-31";
+                break;
+            case 'Q2':
+                $this->date_from = "{$year}-04-01";
+                $this->date_to   = "{$year}-06-30";
+                break;
+            case 'Q3':
+                $this->date_from = "{$year}-07-01";
+                $this->date_to   = "{$year}-09-30";
+                break;
+            case 'Q4':
+                $this->date_from = "{$year}-10-01";
+                $this->date_to   = "{$year}-12-31";
+                break;
+        }
+    } else {
+        $this->date_from = '';
+        $this->date_to = '';
+    }
+}]);
 
 $openCreateModal = function() {
     $this->reset();
@@ -29,8 +63,19 @@ $openCreateModal = function() {
 
 with([
     'sessions' => fn() => CoffeeBreakSession::with(['user.department'])
+        ->when($this->selectedDepartment, function ($query) {
+            $query->where('department_id', $this->selectedDepartment);
+        })
+        ->when($this->date_from, function ($query) {
+            $query->whereDate('date_created', '>=', $this->date_from);
+        })
+        ->when($this->date_to, function ($query) {
+            $query->whereDate('date_created', '<=', $this->date_to);
+        })
         ->latest('date_created')
-        ->get(),
+        ->paginate(12),
+    'departments' => fn() => \App\Models\Department::all(),
+
 ]);
 
 $edit = function (CoffeeBreakSession $session) {
@@ -85,6 +130,16 @@ $viewDetails = function ($id) {
     $this->showDetailModal = true;
 };
 
+$export = function () {
+    $filters = [
+        'selectedDepartment' => $this->selectedDepartment,
+        'date_from'          => $this->date_from,
+        'date_to'            => $this->date_to,
+    ];
+
+    return Excel::download(new CoffBSessionExport($filters), 'coffee_break_sessions.xlsx');
+};
+
 ?>
 
 <div class="p-8 max-w-7xl mx-auto">
@@ -118,6 +173,72 @@ $viewDetails = function ($id) {
             {{ session('message') }}
         </div>
     @endif
+
+    <div class="flex flex-wrap items-center justify-between gap-4 p-4">
+            <div class="flex flex-wrap items-center gap-3">
+
+                <!-- 1. Department Filter -->
+                <div class="relative w-48">
+                    <select
+                        wire:model.live="selectedDepartment"
+                        class="w-full pl-4 pr-10 py-2 bg-white border border-slate-200 rounded-xl shadow-sm outline-none transition-all duration-300 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 text-slate-600 text-sm appearance-none cursor-pointer"
+                    >
+                        <option value="">Semua Jabatan</option>
+                        @foreach($departments as $dept)
+                            <option value="{{ $dept->id }}">{{ $dept->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <!-- 2. Quarter Filter Dropdown -->
+                <div class="relative w-40">
+                    <select
+                        wire:model.live="selectedQuarter"
+                        class="w-full pl-4 pr-10 py-2 bg-white border border-slate-200 rounded-xl shadow-sm outline-none transition-all duration-300 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 text-slate-600 text-sm appearance-none cursor-pointer"
+                    >
+                        <option value="">Pilih Suku</option>
+                        <option value="Q1">Q1 (Jan - Mar)</option>
+                        <option value="Q2">Q2 (Apr - Jun)</option>
+                        <option value="Q3">Q3 (Jul - Sep)</option>
+                        <option value="Q4">Q4 (Oct - Dec)</option>
+                    </select>
+                </div>
+
+                <!-- 3. Date From Input -->
+                <div class="flex items-center gap-1.5 bg-white border border-slate-200 px-3 py-2 rounded-xl shadow-sm transition-all {{ $selectedQuarter ? 'opacity-50 bg-slate-100 cursor-not-allowed' : '' }}">
+                    <span class="text-xs font-medium text-slate-400">Dari:</span>
+                    <input
+                        type="date"
+                        wire:model.live="date_from"
+                        @if($selectedQuarter) disabled @endif
+                        class="text-sm text-slate-700 bg-transparent border-none outline-none focus:ring-0 p-0 cursor-pointer disabled:cursor-not-allowed"
+                    >
+                </div>
+
+                <!-- 4. Date To Input -->
+                <div class="flex items-center gap-1.5 bg-white border border-slate-200 px-3 py-2 rounded-xl shadow-sm transition-all {{ $selectedQuarter ? 'opacity-50 bg-slate-100 cursor-not-allowed' : '' }}">
+                    <span class="text-xs font-medium text-slate-400">Hingga:</span>
+                    <input
+                        type="date"
+                        wire:model.live="date_to"
+                        @if($selectedQuarter) disabled @endif
+                        class="text-sm text-slate-700 bg-transparent border-none outline-none focus:ring-0 p-0 cursor-pointer disabled:cursor-not-allowed"
+                    >
+                </div>
+            </div>
+
+            <!-- Export Excel Button -->
+            <button
+                wire:click="export"
+                type="button"
+                class="no-print inline-flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-xl shadow-sm transition-all duration-200 cursor-pointer"
+            >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                Muat Turun Excel
+            </button>
+        </div>
 
     {{-- Table Section --}}
     <div class="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">

@@ -14,6 +14,7 @@ class ProgramType extends Model
         'description',
         'is_active',
         'submission_slug',
+        'admin_submission_slug',
         'requires_submission',
         'editable'
     ];

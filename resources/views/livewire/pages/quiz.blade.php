@@ -23,7 +23,21 @@ state([
 ]);
 
 $upcomingPrograms = computed(function () {
-    return Program::where('category_id', 3)
+    return \App\Models\Program::whereHas('category', function ($query) {
+            $query->whereIn('submission_slug', ['take-quiz']);
+        })
+        ->where(function ($query) {
+            $query->where(function ($q) {
+                // Case 1: Deadline exists - show before start date up until deadline passes
+                $q->whereNotNull('deadline')
+                  ->whereDate('deadline', '>=', now());
+            })
+            ->orWhere(function ($q) {
+                // Case 2: One-day quiz with no deadline set - show up until start_date passes
+                $q->whereNull('deadline')
+                  ->whereDate('submission_start_date', '>=', now());
+            });
+        })
         ->latest()
         ->get();
 });
@@ -441,14 +455,14 @@ $submitScore = function ($score, $totalQuestions, $correctAnswers, $timeTaken) {
                                         Telah Dijawab
                                     </div>
                                     @else
-                                    <button wire:click="startQuiz('program', {{ $program->id }})"
-                                        class="flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black rounded-xl transition shadow-md shadow-indigo-100">
-                                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <a href="{{ route('submissions.create', ['program' => $program->id, 'submission_slug' => $program->category->submission_slug]) }}"
+                                       class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition shadow-sm">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                         </svg>
-                                        Mula Jawab Kuiz
-                                    </button>
+                                        Mula Kuiz
+                                    </a>
                                     @endif
                                     @else
                                     <a href="{{ route('login') }}?intended={{ urlencode(url()->current()) }}"

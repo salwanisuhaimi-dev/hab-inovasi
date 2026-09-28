@@ -2,12 +2,14 @@
 
 use App\Models\Archive;
 use App\Models\Competition;
-use function Livewire\Volt\{layout, state, with, usesFileUploads, usesPagination};
+use function Livewire\Volt\{layout, state, with, usesFileUploads, usesPagination, computed};
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\WithFileUploads;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\ArchiveExport;
 
 layout('layouts.app');
 usesFileUploads();
@@ -18,6 +20,7 @@ state([
     'editing' => null,
     'search' => '',
     'selectedCompetition' => '',
+    'selectedYear' => '',
     'department_id' => '',
     'project_name' => '',
     'group_name' => '',
@@ -71,16 +74,24 @@ $edit = function (Archive $archive) {
 };
 
 with([
-    'archives' => fn() => Archive::with(['department', 'competitions'])->latest()
-            ->when($this->search, function ($query) {
-                $query->where('project_name', 'like', '%' . $this->search . '%');
-              })
-              ->when($this->selectedCompetition, function ($query) {
-                      $query->whereHas('competitions', function ($q) {
-                          $q->where('competitions.id', $this->selectedCompetition);
-                      });
-              })
-              ->paginate(12),
+  'archives' => fn() => Archive::query()
+          ->select('archives.*')
+          ->with(['department', 'competitions'])
+          ->latest()
+          ->when($this->search, function ($query) {
+              $query->where('project_name', 'like', '%' . $this->search . '%');
+          })
+          ->when($this->selectedCompetition || $this->selectedYear, function ($query) {
+              $query->whereHas('competitions', function ($q) {
+                  $q->when($this->selectedCompetition, function ($pivotQuery) {
+                      $pivotQuery->where('archive_competition.competition_id', $this->selectedCompetition);
+                  })
+                  ->when($this->selectedYear, function ($pivotQuery) {
+                      $pivotQuery->where('archive_competition.year', $this->selectedYear);
+                  });
+              });
+          })
+          ->paginate(12),
     'departments' => fn() => \App\Models\Department::where('status', 'aktif')->orderBy('name')->get(),
     'competitions' => fn() => Competition::where('status', 'aktif')->orderBy('name')->get(),
 ]);
@@ -213,6 +224,20 @@ $viewDetails = function ($id) {
     $this->showDetailModal = true;
 };
 
+$years = computed(fn () => range(date('Y'), 2020));
+
+$exportExcel = function () {
+    $filters = [
+        'search'              => $this->search,
+        'selectedCompetition' => $this->selectedCompetition,
+        'selectedYear'        => $this->selectedYear,
+    ];
+
+    $fileName = 'archive_projects_' . now()->format('Ymd_His') . '.xlsx';
+
+    return Excel::download(new ArchiveExport($filters), $fileName);
+};
+
 ?>
 
 <div class="p-6">
@@ -269,6 +294,35 @@ $viewDetails = function ($id) {
                   @endforeach
               </select>
         </div>
+
+        <div class="relative group w-40">
+            <select
+                wire:model.live="selectedYear"
+                class="w-full pl-4 pr-10 py-2.5 bg-white border border-slate-200 rounded-xl shadow-sm outline-none transition-all duration-300 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 text-slate-600 text-sm appearance-none cursor-pointer"
+            >
+                <option value="">Semua Tahun</option>
+                @foreach($this->years as $year)
+                    <option value="{{ $year }}">{{ $year }}</option>
+                @endforeach
+            </select>
+        </div>
+
+        <button
+              wire:click="exportExcel"
+              wire:loading.attr="disabled"
+              class="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-medium text-sm rounded-xl shadow-sm transition-all duration-200 cursor-pointer ml-auto"
+        >
+              <svg wire:loading.remove wire:target="exportExcel" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+              </svg>
+
+              <svg wire:loading wire:target="exportExcel" class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+
+              <span>Export Excel</span>
+        </button>
     </div>
 
 

@@ -9,6 +9,7 @@ use App\Livewire\Pages\User\SubmitProject;
 use App\Http\Controllers\ReportController;
 use Illuminate\Support\Facades\Cookie;
 
+
 /*
 |--------------------------------------------------------------------------
 | Public Routes
@@ -149,6 +150,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
 
     Volt::route('/programs', 'pages.admin.program-index')
         ->name('admin.programs');
+
+    Volt::route('/submissions/{program}/{submission_slug}', 'pages.admin.program-submissions.index')
+        ->name('submissions.index');
+
 
     Volt::route('/admin/program/{program}/submissions', 'pages.admin.program-submissions')
         ->name('admin.program.submissions');

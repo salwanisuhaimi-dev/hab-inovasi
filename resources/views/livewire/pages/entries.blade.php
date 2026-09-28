@@ -14,16 +14,36 @@ state([
 ]);
 
 $programs = computed(function () {
-    return \App\Models\Program::whereIn('category_id', [1, 4, 5])
-        ->where('deadline', '>=', now())
+    return \App\Models\Program::whereHas('category', function ($query) {
+            $query->whereIn('submission_slug', ['submit-project', 'submit-form']);
+        })
+        ->where(function ($query) {
+            $query->whereDate('submission_start_date', '<=', now())
+                  ->whereDate('deadline', '>=', now());
+        })
         ->latest()
         ->get();
 });
 
 $activePrograms = computed(function () {
-    return \App\Models\Program::whereIn('category_id', [1, 4, 5])
-        ->latest()
-        ->get();
+  return \App\Models\Program::whereHas('category', function ($query) {
+          $query->whereIn('submission_slug', ['submit-project', 'submit-form']);
+      })
+      ->where(function ($query) {
+                  $query->where(function ($q) {
+                      // Case 1: Multi-day program - check end_date
+                      $q->whereNotNull('end_date')
+                        ->whereDate('end_date', '>=', now());
+                  })
+                  ->orWhere(function ($q) {
+                      // Case 2: One-day program (end_date is NULL) - check start_date
+                      $q->whereNull('end_date')
+                        ->whereDate('start_date', '>=', now());
+                  });
+              })
+      ->latest()
+      ->get();
+
 });
 
 
@@ -384,10 +404,10 @@ $delete = function ($id) {
                             </div>
 
                             <div class="flex flex-col sm:flex-row md:flex-col items-center md:items-end gap-3 w-full md:w-auto border-t md:border-t-0 md:border-l border-gray-100 pt-4 md:pt-0 md:pl-6 flex-shrink-0">
-                                @if(\Carbon\Carbon::parse($program->start_date)->isFuture())
+                                @if(\Carbon\Carbon::parse($program->deadline)->isFuture())
                                 <div class="inline-flex items-center gap-1 bg-red-50 text-red-700 text-[10px] font-bold px-2.5 py-1 rounded-full border border-red-100 shadow-sm">
                                     <span class="w-1 h-1 bg-red-500 rounded-full animate-pulse"></span>
-                                    {{ round(now()->diffInDays(\Carbon\Carbon::parse($program->start_date))) }} hari lagi
+                                    {{ round(now()->diffInDays(\Carbon\Carbon::parse($program->deadline))) }} hari lagi
                                 </div>
                                 @endif
 

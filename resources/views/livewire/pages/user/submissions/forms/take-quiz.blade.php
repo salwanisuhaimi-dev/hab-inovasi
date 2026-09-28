@@ -89,15 +89,15 @@ $submitScore = function ($score, $totalQuestions, $correctAnswers, $timeTaken) {
     </div>
 
     <div class="mb-6 flex items-center justify-between">
-        <a href="{{ route('user.dashboard') }}"
-            class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-bold rounded-xl transition duration-200 group">
+        <a href="{{ url()->previous() !== url()->current() ? url()->previous() : route('user.dashboard') }}"
+           class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-bold rounded-xl transition duration-200 group">
             <svg class="w-4 h-4 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
             </svg>
             Kembali
         </a>
     </div>
-
+    
     {{-- NOTIFIKASI FLASH --}}
     @if (session()->has('error'))
         <div class="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg flex items-center justify-between">

@@ -14,6 +14,7 @@ state([
     'editable' => true,
     'requires_submission' => false,
     'submission_slug' => '',
+    'admin_submission_slug' => '',
 ]);
 
 $edit = function (ProgramType $programtype) {
@@ -24,6 +25,7 @@ $edit = function (ProgramType $programtype) {
     $this->editable = (bool) ($programtype->editable ?? true);
     $this->requires_submission = (bool) $programtype->requires_submission;
     $this->submission_slug = $programtype->submission_slug ?? '';
+    $this->admin_submission_slug = $programType->admin_submission_slug ?? '';
 
     $this->showModal = true;
 };
@@ -40,6 +42,8 @@ $save = function () {
         'editable' => 'boolean',
         'requires_submission' => 'boolean',
         'submission_slug' => $this->requires_submission ? 'required|string|max:255' : 'nullable|string|max:255',
+        'admin_submission_slug' => 'required|string|max:255',
+
     ]);
 
     $payload = [
@@ -48,6 +52,8 @@ $save = function () {
         'editable' => $this->editable ?? true,
         'requires_submission' => $this->requires_submission,
         'submission_slug' => $this->requires_submission ? $this->submission_slug : null,
+        'admin_submission_slug' => $this->admin_submission_slug,
+
     ];
 
     if ($this->editing) {
@@ -58,7 +64,7 @@ $save = function () {
         session()->flash('message', 'Kategori Program berjaya disimpan!');
     }
 
-    $this->reset(['editing', 'name', 'is_active', 'editable', 'requires_submission', 'submission_slug']);
+    $this->reset(['editing', 'name', 'is_active', 'editable', 'requires_submission', 'submission_slug', 'admin_submission_slug']);
     $this->showModal = false;
 };
 
@@ -76,7 +82,7 @@ $delete = function ($id) {
 };
 
 $openCreateModal = function() {
-    $this->reset(['editing', 'name', 'requires_submission', 'submission_slug']);
+    $this->reset(['editing', 'name', 'requires_submission', 'submission_slug', 'admin_submission_slug']);
     $this->is_active = true;
     $this->editable = true;
     $this->showModal = true;
@@ -112,6 +118,7 @@ $openCreateModal = function() {
                     <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest">Terima Penyertaan</th>
                     <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest">Edit Penyertaan</th>
                     <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest">Link Penyertaan</th>
+                    <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest">Link Penyertaan (Admin)</th>
                     <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest text-right">Tindakan</th>
                 </tr>
             </thead>
@@ -141,6 +148,12 @@ $openCreateModal = function() {
                                 {{ $programtype->submission_slug ?? '-' }}
                             </code>
                         </td>
+                        <td class="px-6 py-4">
+                            <code class="text-xs bg-gray-100 px-2 py-1 rounded text-gray-700 font-mono">
+                                {{ $programtype->admin_submission_slug ?? '-' }}
+                            </code>
+                        </td>
+
                         <td class="px-6 py-4 text-right whitespace-nowrap">
                             <div class="flex justify-end gap-3">
                                     <button wire:click="edit({{ $programtype->id }})"
@@ -215,6 +228,14 @@ $openCreateModal = function() {
                                 @error('submission_slug') <span class="text-xs text-red-500 mt-1 block">{{ $message }}</span> @enderror
                             </div>
                         @endif
+
+                        <div class="pt-2">
+                            <label class="block text-xs font-black text-gray-400 uppercase mb-1">Admin Submission Slug <span class="text-red-500">*</span></label>
+                            <input type="text" wire:model="admin_submission_slug" placeholder="Contoh: quiz-submission, project-submission" class="w-full rounded-xl border-gray-200 focus:ring-blue-500 focus:border-blue-500 p-3 text-sm">
+                            <p class="text-[11px] text-gray-400 mt-1">Nama penyertaan (Admin)</p>
+                            @error('admin_submission_slug') <span class="text-xs text-red-500 mt-1 block">{{ $message }}</span> @enderror
+                        </div>
+
 
                         <div class="pt-4 flex gap-3">
                             <button type="submit" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition">

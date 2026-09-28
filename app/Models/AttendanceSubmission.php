@@ -31,4 +31,9 @@ class AttendanceSubmission extends Model
         return $this->belongsTo(Submission::class);
     }
 
+    public function targetSubmission()
+    {
+            return $this->belongsTo(ProjectSubmission::class, 'target_submission_id');
+    }
+
 }
