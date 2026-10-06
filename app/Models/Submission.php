@@ -16,6 +16,7 @@ class Submission extends Model
     protected $fillable = [
         'program_id',
         'user_id',
+        'status',
     ];
 
     /**

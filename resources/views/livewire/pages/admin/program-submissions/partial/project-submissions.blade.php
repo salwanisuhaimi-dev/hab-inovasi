@@ -26,11 +26,15 @@ with([
 $updateStatus = function ($submissionId, $status) {
     $submission = Submission::findOrFail($submissionId);
 
-    if ($submission->projectDetail) {
-        $submission->projectDetail->update(['status' => $status]);
+    // Updates status directly in the `submissions` table
+    $submission->update(['status' => $status]);
+
+    // Refresh selected submission if modal is open for this record
+    if ($this->selectedSubmission && $this->selectedSubmission->id === $submissionId) {
+        $this->selectedSubmission->refresh();
     }
 
-    session()->flash('success', "Status penyertaan telah dikemaskini ke {$status}.");
+    session()->flash('success', "Status penyertaan telah dikemaskini.");
 };
 
 $viewDetails = function ($id) {
@@ -39,10 +43,8 @@ $viewDetails = function ($id) {
 };
 
 $exportExcel = function () {
-    // Ambil nama program type
     $programTypeName = $this->program->category->name ?? '';
 
-    // Semak sama ada "Idea Inovasi" wujud dalam nama program type (tidak sensitif huruf besar/kecil)
     if (\Illuminate\Support\Str::contains($programTypeName, 'Pertandingan Idea Inovasi', ignoreCase: true)) {
         return \App\Exports\SubmissionExport::downloadIdea($this->program);
     }
@@ -67,7 +69,7 @@ $exportExcel = function () {
             </div>
             <div class="bg-blue-600 px-6 py-3 rounded-2xl text-white shadow-lg shadow-blue-100 text-center">
                 <p class="text-[10px] font-bold uppercase opacity-80 tracking-tighter">Jumlah Penyertaan</p>
-                <p class="text-2xl font-black">{{ $submissions->count() }}</p>
+                <p class="text-2xl font-black">{{ $submissions->total() }}</p>
             </div>
         </div>
 
@@ -90,8 +92,6 @@ $exportExcel = function () {
             </button>
         </div>
 
-
-
         <div class="bg-white overflow-hidden shadow-xl sm:rounded-[2.5rem] border border-gray-100">
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
@@ -109,9 +109,9 @@ $exportExcel = function () {
                         @forelse($submissions as $sub)
                             @php
                                 $project = $sub->projectDetail;
-                                $status = $project->status ?? 'pending';
+                                $status = $sub->status ?? 'pending';
                             @endphp
-                            <tr class="hover:bg-gray-50/50 transition-colors">
+                            <tr wire:key="submission-row-{{ $sub->id }}" class="hover:bg-gray-50/50 transition-colors">
                                 <td class="px-6 py-6">
                                     <div class="flex items-center gap-3">
                                         <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs uppercase flex-shrink-0">
@@ -127,7 +127,7 @@ $exportExcel = function () {
                                 </td>
                                 <td class="px-6 py-6">
                                     <p class="text-xs text-gray-600 font-bold italic">
-                                        {{ $project->department->name ?? $sub->user->department->code }}
+                                        {{ $project->department->name ?? $sub->user->department->code ?? '-' }}
                                     </p>
                                 </td>
 
@@ -257,7 +257,7 @@ $exportExcel = function () {
                                 <div class="text-right">
                                     <p class="text-xs text-gray-500 font-bold uppercase tracking-widest">Bahagian</p>
                                     <p class="font-bold text-gray-900 text-sm">
-                                        {{ $selectedProject->department->name ?? $selectedSubmission->user->department->name }}
+                                        {{ $selectedProject->department->name ?? $selectedSubmission->user->department->name ?? '-' }}
                                     </p>
                                 </div>
                             </div>

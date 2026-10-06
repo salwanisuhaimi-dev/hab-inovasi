@@ -82,7 +82,7 @@ $save = function () {
         'name' => 'required',
         'email' => 'required',
         'credits' => '',
-        'department_id' => 'required',
+        'department_id' => 'nullable|exists:departments,id',
         'position' => '',
         'grade' => '',
         'telephone_num' => '',
@@ -210,7 +210,7 @@ $openCreateModal = function() {
                             <div class="font-bold text-gray-900">{{ $user->name }}</div>
                         </td>
                         <td class="px-6 py-4">
-                            <div class="font-bold text-gray-900">{{ $user->department->code }}</div>
+                            <div class="font-bold text-gray-900">{{ $user->department?->code ?? '-' }}</div>
                         </td>
                         <td class="px-6 py-4">
                             <div class="text-sm text-gray-700 font-medium">{{ $user->email }}</div>

@@ -3,16 +3,20 @@
 namespace App\Exports;
 
 use App\Models\Archive;
+use App\Models\Competition; // Added if you need to fetch the competition name by ID
 use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithStyles;
+use Maatwebsite\Excel\Concerns\WithCustomStartCell;
+use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 
-class ArchiveExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoSize, WithStyles
+class ArchiveExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoSize, WithStyles, WithCustomStartCell, WithEvents
 {
     protected array $filters;
     private int $rowNumber = 0;
@@ -20,6 +24,11 @@ class ArchiveExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoS
     public function __construct(array $filters = [])
     {
         $this->filters = $filters;
+    }
+
+    public function startCell(): string
+    {
+        return 'A3';
     }
 
     public function query()
@@ -51,12 +60,12 @@ class ArchiveExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoS
     {
         return [
             'No.',
+            'Nama Kumpulan',
             'Nama Projek',
-            'Deskripsi',
-            'Jabatan',
+            'Penerangan',
+            'Bahagian',
             'Pertandingan',
-            'Tahun Pertandingan',
-            'Tarikh Cipta',
+            'Tahun',
         ];
     }
 
@@ -67,7 +76,6 @@ class ArchiveExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoS
         $selectedCompetition = $this->filters['selectedCompetition'] ?? null;
         $selectedYear = $this->filters['selectedYear'] ?? null;
 
-        // Filter koleksi competitions berdasarkan nilai dropdown jika ada
         $filteredCompetitions = $archive->competitions->when($selectedCompetition || $selectedYear, function ($collection) use ($selectedCompetition, $selectedYear) {
             return $collection->filter(function ($competition) use ($selectedCompetition, $selectedYear) {
                 $matchComp = $selectedCompetition ? $competition->id == $selectedCompetition : true;
@@ -79,32 +87,95 @@ class ArchiveExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoS
 
         return [
             $this->rowNumber,
+            $archive->group_name,
             $archive->project_name,
             $archive->description ?? '-',
             $archive->department->name ?? '-',
             $filteredCompetitions->pluck('name')->implode(', ') ?: '-',
             $filteredCompetitions->pluck('pivot.year')->filter()->implode(', ') ?: '-',
-            $archive->created_at?->format('d/m/Y') ?? '-',
+        ];
+    }
+
+    /**
+     * Build dynamic header title based on applied filters
+     */
+    private function getDynamicTitle(): string
+    {
+        $selectedCompetitionId = $this->filters['selectedCompetition'] ?? null;
+        $selectedYear = $this->filters['selectedYear'] ?? null;
+
+        // 1. Neither competition nor year is selected
+        if (!$selectedCompetitionId && !$selectedYear) {
+            return 'Projek-projek Inovasi';
+        }
+
+        // 2. Fetch competition name if selected
+        $competitionName = null;
+        if ($selectedCompetitionId) {
+            $competitionName = Competition::find($selectedCompetitionId)?->name;
+        }
+
+        // 3. Construct dynamic title depending on selected values
+        $titleParts = [];
+
+        if ($competitionName) {
+            $titleParts[] = 'Projek ' . $competitionName;
+        } else {
+            $titleParts[] = 'Projek-projek Inovasi';
+        }
+
+        if ($selectedYear) {
+            $titleParts[] = $selectedYear;
+        }
+
+        return implode(' ', $titleParts);
+    }
+
+    public function registerEvents(): array
+    {
+        return [
+            AfterSheet::class => function (AfterSheet $event) {
+                $sheet = $event->sheet->getDelegate();
+
+                // Get dynamic title text
+                $titleText = $this->getDynamicTitle();
+
+                // Set title text and merge cells A1 to G1
+                $sheet->setCellValue('A1', $titleText);
+                $sheet->mergeCells('A1:G1');
+            },
         ];
     }
 
     public function styles(Worksheet $sheet)
     {
-        // 1. Tinggi baris Header
-        $sheet->getRowDimension(1)->setRowHeight(35);
+        $sheet->getRowDimension(1)->setRowHeight(40);
+        $sheet->getRowDimension(3)->setRowHeight(35);
 
-        // 2. Lebar khas untuk kolum Deskripsi
-        $sheet->getColumnDimension('C')->setAutoSize(false)->setWidth(45);
+        $sheet->getColumnDimension('D')->setAutoSize(false)->setWidth(45);
 
-        // 3. Text wrap untuk semua sel
-        $sheet->getStyle('A1:' . $sheet->getHighestColumn() . $sheet->getHighestRow())
+        // Title styling
+        $sheet->getStyle('A1')->applyFromArray([
+            'font' => [
+                'bold' => true,
+                'size' => 16,
+                'color' => ['argb' => '1F2937'],
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER,
+            ],
+        ]);
+
+        // Wrap text for data rows
+        $sheet->getStyle('A3:' . $sheet->getHighestColumn() . $sheet->getHighestRow())
             ->getAlignment()
             ->setWrapText(true)
             ->setVertical(Alignment::VERTICAL_TOP);
 
-        // 4. Style Header
+        // Header style
         return [
-            1 => [
+            3 => [
                 'font' => [
                     'bold' => true,
                     'color' => ['argb' => 'FFFFFF'],
