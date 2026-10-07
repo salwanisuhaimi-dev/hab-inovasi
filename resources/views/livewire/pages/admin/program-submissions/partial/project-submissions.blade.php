@@ -2,10 +2,14 @@
 
 use App\Models\Program;
 use App\Models\Submission;
+use App\Models\Archive;
+use App\Models\ArchiveCompetition;
+
 use function Livewire\Volt\{layout, state, with, usesPagination};
 use Illuminate\Support\Facades\Storage;
 use App\Exports\SubmissionExport;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Carbon;
 
 layout('layouts.app');
 usesPagination();
@@ -14,14 +18,38 @@ state([
     'program' => fn (Program $program) => $program,
     'selectedSubmission' => null,
     'showModal' => false,
+    'showBulkArchiveModal' => false,
+    'juara_id' => '',
+    'naib_juara_id' => '',
+    'ketiga_id' => '',
+    'programYear' => fn () => request()->route('program')
+        ? (Carbon::parse(request()->route('program')->start_date)->year ?? Carbon::now()->year)
+        : Carbon::now()->year,
 ]);
 
 with([
     'submissions' => fn() => Submission::where('program_id', $this->program->id)
         ->with(['user', 'projectDetail.department'])
         ->latest()
-        ->paginate(15)
+        ->paginate(15),
+
+    'allSubmissions' => fn() => Submission::where('program_id', $this->program->id)
+                ->with(['user', 'projectDetail'])
+                ->get(),
+     // Check if archive records already exist for this competition & year
+     'hasArchivedRecords' => function () {
+                 $competitionId = $this->program->competition_id;
+                 $year = $this->program->start_date
+                     ? \Illuminate\Support\Carbon::parse($this->program->start_date)->year
+                     : \Illuminate\Support\Carbon::now()->year;
+
+                 return ArchiveCompetition::where('competition_id', $competitionId)
+                     ->where('year', $year)
+                     ->exists();
+      }
 ]);
+
+
 
 $updateStatus = function ($submissionId, $status) {
     $submission = Submission::findOrFail($submissionId);
@@ -51,6 +79,130 @@ $exportExcel = function () {
 
     return \App\Exports\SubmissionExport::downloadProject($this->program);
 };
+
+$openBulkArchiveModal = function () {
+    $this->resetValidation();
+
+    $competitionId = $this->program->competition_id;
+    $year = $this->program->start_date
+        ? Carbon::parse($this->program->start_date)->year
+        : Carbon::now()->year;
+
+    // 1. Reset values first
+    $this->juara_id = '';
+    $this->naib_juara_id = '';
+    $this->ketiga_id = '';
+
+    $allSubmissions = Submission::where('program_id', $this->program->id)
+        ->with(['user', 'projectDetail'])
+        ->get();
+
+    $archivedRecords = ArchiveCompetition::where('competition_id', $competitionId)
+        ->where('year', $year)
+        ->with('archive')
+        ->get();
+
+    // Temporary variables to hold matched IDs before binding
+    $juaraId = '';
+    $naibJuaraId = '';
+    $ketigaId = '';
+
+    foreach ($archivedRecords as $record) {
+        if (!$record->archive) continue;
+
+        $matchedSub = $allSubmissions->first(function ($sub) use ($record) {
+            $projectTitle = trim($sub->projectDetail->project_title ?? '');
+            $groupName = trim($sub->projectDetail->group_name ?? $sub->user->name ?? '');
+
+            return ($projectTitle !== '' && $projectTitle === trim($record->archive->project_name))
+                || ($groupName !== '' && $groupName === trim($record->archive->group_name));
+        });
+
+        if ($matchedSub) {
+            if ($record->achievement === 'Juara') {
+                $juaraId = (string) $matchedSub->id;
+            } elseif ($record->achievement === 'Naib Juara') {
+                $naibJuaraId = (string) $matchedSub->id;
+            } elseif ($record->achievement === 'Tempat Ketiga') {
+                $ketigaId = (string) $matchedSub->id;
+            }
+        }
+    }
+
+    // 2. Assign values simultaneously as string types
+    $this->juara_id = $juaraId;
+    $this->naib_juara_id = $naibJuaraId;
+    $this->ketiga_id = $ketigaId;
+
+    $this->showBulkArchiveModal = true;
+};
+
+$processBulkArchive = function () {
+    $this->validate([
+        'juara_id'      => 'required|different:naib_juara_id|different:ketiga_id',
+        'naib_juara_id' => 'required|different:juara_id|different:ketiga_id',
+        'ketiga_id'     => 'required|different:juara_id|different:naib_juara_id',
+    ], [
+        'juara_id.required'      => 'Sila pilih Juara.',
+        'naib_juara_id.required' => 'Sila pilih Naib Juara.',
+        'ketiga_id.required'     => 'Sila pilih Tempat Ketiga.',
+        '*.different'            => 'Pemenang yang sama tidak boleh dipilih lebih daripada sekali.',
+    ]);
+
+    DB::transaction(function () {
+        $submissions = Submission::where('program_id', $this->program->id)
+            ->with(['user', 'projectDetail'])
+            ->get();
+
+        $competitionId = $this->program->competition_id;
+        $year = $this->programYear;
+
+        foreach ($submissions as $sub) {
+            // Determine achievement
+            $achievement = 'Penyertaan';
+            if ((string)$sub->id === (string)$this->juara_id) {
+                $achievement = 'Juara';
+            } elseif ((string)$sub->id === (string)$this->naib_juara_id) {
+                $achievement = 'Naib Juara';
+            } elseif ((string)$sub->id === (string)$this->ketiga_id) {
+                $achievement = 'Tempat Ketiga';
+            }
+
+            $projectName = $sub->projectDetail->project_title ?? 'Tiada Tajuk';
+            $groupName = $sub->projectDetail->group_name
+                ?? $sub->user->name
+                ?? 'N/A';
+
+            // 1. Update or create archive record by project_name & group_name
+            $archive = Archive::updateOrCreate(
+                [
+                    'project_name' => $projectName,
+                    'group_name'   => $groupName,
+                ],
+                [
+                    'description'   => $sub->projectDetail->project_description ?? null,
+                    'department_id' => $sub->projectDetail->department_id ?? null,
+                ]
+            );
+
+            // 2. Update or create competition archive record by archive_id & competition_id
+            ArchiveCompetition::updateOrCreate(
+                [
+                    'archive_id'     => $archive->id,
+                    'competition_id' => $competitionId,
+                ],
+                [
+                    'achievement'    => $achievement,
+                    'year'           => $year,
+                ]
+            );
+        }
+    });
+
+    $this->showBulkArchiveModal = false;
+    session()->flash('success', "Keputusan pemenang berjaya disimpan.");
+};
+
 ?>
 
 <div class="py-2">
@@ -82,14 +234,24 @@ $exportExcel = function () {
                 Kembali
             </a>
 
-            <button wire:click="exportExcel"
-                  type="button"
-                  class="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-2xl shadow-md shadow-emerald-100 transition duration-200">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                  </svg>
-                  Eksport Excel
-            </button>
+            <div class="flex items-center gap-3">
+                 <button wire:click="openBulkArchiveModal"
+                      type="button"
+                      class="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-2xl shadow-md shadow-amber-100 transition duration-200">
+                      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M19 4h-3V3a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v1H5a2 2 0 0 0-2 2v2a4 4 0 0 0 4 4h.26A7.002 7.002 0 0 0 11 17.92V19H8a1 1 0 0 0 0 2h8a1 1 0 0 0 0-2h-3v-1.08A7.002 7.002 0 0 0 16.74 12H17a4 4 0 0 0 4-4V6a2 2 0 0 0-2-2zM5 8V6h2v4.17A2 2 0 0 1 5 8zm14 0a2 2 0 0 1-2 2.17V6h2v2z"/>
+                      </svg>
+                      {{ $hasArchivedRecords ? 'Kemaskini Pemenang' : 'Umumkan Pemenang' }}
+                  </button>
+                  <button wire:click="exportExcel"
+                        type="button"
+                        class="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-2xl shadow-md shadow-emerald-100 transition duration-200">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        Eksport Excel
+                  </button>
+            </div>
         </div>
 
         <div class="bg-white overflow-hidden shadow-xl sm:rounded-[2.5rem] border border-gray-100">
@@ -290,4 +452,87 @@ $exportExcel = function () {
             </div>
         </div>
     </div>
+
+    <div x-data="{ open: @entangle('showBulkArchiveModal') }"
+     x-show="open"
+     x-cloak
+     class="fixed inset-0 z-50 overflow-y-auto"
+     style="display: none;">
+
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 transition-opacity bg-gray-900 bg-opacity-75" x-on:click="open = false"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+        <div class="inline-block px-4 pt-5 pb-4 overflow-hidden text-left align-bottom transition-all transform bg-white rounded-[2.5rem] shadow-xl sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-8">
+            <div class="text-center mb-6">
+                <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M19 4h-3V3a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v1H5a2 2 0 0 0-2 2v2a4 4 0 0 0 4 4h.26A7.002 7.002 0 0 0 11 17.92V19H8a1 1 0 0 0 0 2h8a1 1 0 0 0 0-2h-3v-1.08A7.002 7.002 0 0 0 16.74 12H17a4 4 0 0 0 4-4V6a2 2 0 0 0-2-2zM5 8V6h2v4.17A2 2 0 0 1 5 8zm14 0a2 2 0 0 1-2 2.17V6h2v2z"/>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-black text-gray-900">Keputusan Pertandingan</h3>
+                <p class="text-xs text-gray-500 mt-1">Pilih pemenang bagi pertandingan ini. Penyertaan lain adalah automatik sebagai <strong>Penyertaan</strong>.</p>
+            </div>
+
+            <div class="space-y-4">
+                <!-- Juara Field -->
+                <div>
+                    <label class="block text-xs font-black text-amber-600 uppercase tracking-widest mb-1.5">🥇 Juara</label>
+                    <select wire:model.live="juara_id" class="w-full rounded-2xl border-gray-200 text-sm font-bold text-gray-800 focus:ring-amber-500 focus:border-amber-500">
+                        <option value="">-- Pilih Juara --</option>
+                        @foreach($allSubmissions as $sub)
+                            <option value="{{ $sub->id }}">
+                                {{ $sub->projectDetail->project_title ?? 'Tiada Tajuk' }} ({{ $sub->projectDetail->group_name ?? $sub->user->name ?? 'N/A' }})
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <!-- Naib Juara Field -->
+                <div>
+                    <label class="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5">🥈 Naib Juara</label>
+                    <select wire:model.live="naib_juara_id" class="w-full rounded-2xl border-gray-200 text-sm font-bold text-gray-800 focus:ring-amber-500 focus:border-amber-500">
+                        <option value="">-- Pilih Naib Juara --</option>
+                        @foreach($allSubmissions as $sub)
+                            @if((string)$sub->id !== (string)$juara_id)
+                                <option value="{{ $sub->id }}">
+                                    {{ $sub->projectDetail->project_title ?? 'Tiada Tajuk' }} ({{ $sub->projectDetail->group_name ?? $sub->user->name ?? 'N/A' }})
+                                </option>
+                            @endif
+                        @endforeach
+                    </select>
+                </div>
+
+                <!-- Tempat Ketiga Field -->
+                <!-- Tempat Ketiga Field -->
+                <div>
+                    <label class="block text-xs font-black text-amber-700 uppercase tracking-widest mb-1.5">🥉 Tempat Ketiga <span class="text-red-500">*</span></label>
+                    <select wire:model.live="ketiga_id" class="w-full rounded-2xl border-gray-200 text-sm font-bold text-gray-800 focus:ring-amber-500 focus:border-amber-500">
+                        <option value="">-- Pilih Tempat Ketiga --</option>
+                        @foreach($allSubmissions as $sub)
+                            @if((string)$sub->id !== (string)$juara_id && (string)$sub->id !== (string)$naib_juara_id)
+                                <option value="{{ $sub->id }}" {{ (string)$sub->id === (string)$ketiga_id ? 'selected' : '' }}>
+                                    {{ $sub->projectDetail->project_title ?? 'Tiada Tajuk' }} ({{ $sub->projectDetail->group_name ?? $sub->user->name ?? 'N/A' }})
+                                </option>
+                            @endif
+                        @endforeach
+                    </select>
+                    @error('ketiga_id') <span class="text-xs text-red-500 font-bold mt-1 block">{{ $message }}</span> @enderror
+                </div>
+            </div>
+
+            <div class="mt-8 flex gap-3">
+                <button wire:click="processBulkArchive"
+                        wire:confirm="Adakah anda pasti? Semua penyertaan akan diarkibkan dan disimpan ke rekod sejarah."
+                        class="flex-1 py-3.5 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl font-bold text-sm shadow-md shadow-amber-100 transition-all">
+                    Simpan Keputusan & Arkib
+                </button>
+                <button x-on:click="open = false" class="py-3.5 px-5 bg-gray-100 text-gray-600 hover:bg-gray-200 rounded-2xl font-bold text-sm transition-all">
+                    Batal
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 </div>
