@@ -477,7 +477,7 @@ $processBulkArchive = function () {
             <div class="space-y-4">
                 <!-- Juara Field -->
                 <div>
-                    <label class="block text-xs font-black text-amber-600 uppercase tracking-widest mb-1.5">🥇 Juara</label>
+                    <label class="block text-xs font-black text-amber-600 uppercase tracking-widest mb-1.5">🥇 Juara <span class="text-red-500">*</span></label>
                     <select wire:model.live="juara_id" class="w-full rounded-2xl border-gray-200 text-sm font-bold text-gray-800 focus:ring-amber-500 focus:border-amber-500">
                         <option value="">-- Pilih Juara --</option>
                         @foreach($allSubmissions as $sub)
@@ -490,7 +490,7 @@ $processBulkArchive = function () {
 
                 <!-- Naib Juara Field -->
                 <div>
-                    <label class="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5">🥈 Naib Juara</label>
+                    <label class="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5">🥈 Naib Juara <span class="text-red-500">*</span></label>
                     <select wire:model.live="naib_juara_id" class="w-full rounded-2xl border-gray-200 text-sm font-bold text-gray-800 focus:ring-amber-500 focus:border-amber-500">
                         <option value="">-- Pilih Naib Juara --</option>
                         @foreach($allSubmissions as $sub)

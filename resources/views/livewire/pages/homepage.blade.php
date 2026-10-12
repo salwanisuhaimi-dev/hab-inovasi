@@ -3,20 +3,11 @@
 use App\Models\Archive;
 use App\Models\Quiz;
 use App\Models\Program;
+use App\Models\ArchiveCompetition;
 use function Livewire\Volt\{layout, with, state, mount};
+use Illuminate\Support\Carbon;
 
 layout('layouts.landing');
-
-with([
-  'projects' => Archive::latest()->get(),
-  'programs' => fn() => Program::where(function ($query) {
-          $query->whereDate('start_date', '>=', now())
-                ->orWhereNull('start_date')
-                ->orWhere('start_date', '0000-00-00');
-      })
-      ->latest()
-      ->get(),
-]);
 
 state([
     'showWelcome' => true,
@@ -24,6 +15,53 @@ state([
     'isCorrect' => null,
     'activeQuestion' => null,
     'extras' => null,
+    'showWinnerPortalModal' => false,
+    'selectedActiveProgram' => null,
+    'activeProgramWinners'  => [],
+]);
+
+with([
+    'projects' => Archive::latest()->get(),
+
+    'programs' => fn() => Program::where(function ($query) {
+            $query->whereDate('start_date', '>=', now())
+                  ->orWhereNull('start_date')
+                  ->orWhere('start_date', '0000-00-00');
+        })
+        ->latest()
+        ->get(),
+
+        // Fetch active announcement programs together with their archive competition winners
+            'activeAnnouncements' => function () {
+                $now = Carbon::now();
+
+                return Program::query()
+                    ->whereNotNull('announcement_start_date')
+                    ->whereRaw('announcement_start_date <= NOW()')
+                    ->where(function ($query) {
+                        $query->whereNull('announcement_end_date')
+                              ->orWhereRaw('announcement_end_date >= NOW()');
+                    })
+                    ->whereHas('category', function ($q) {
+                        $q->where('has_winner_announcement', 1);
+                    })
+                    ->with(['category'])
+                    ->get()
+                    ->map(function ($program) {
+                        // Attach the archived winners directly to each active program object
+                        $year = $program->start_date
+                            ? Carbon::parse($program->start_date)->year
+                            : Carbon::now()->year;
+
+                        $program->winners = ArchiveCompetition::where('competition_id', $program->competition_id)
+                            ->where('year', $year)
+                            ->with('archive')
+                            ->orderByRaw("FIELD(achievement, 'Juara', 'Naib Juara', 'Tempat Ketiga', 'Penyertaan')")
+                            ->get();
+
+                        return $program;
+                    });
+            }
 ]);
 
 mount(function () {
@@ -55,6 +93,22 @@ $checkAnswer = function ($key) {
     }
 };
 
+$viewWinners = function ($programId) {
+    $program = Program::findOrFail($programId);
+    $year = $program->start_date
+        ? Carbon::parse($program->start_date)->year
+        : Carbon::now()->year;
+
+    $winners = ArchiveCompetition::where('competition_id', $program->competition_id)
+        ->where('year', $year)
+        ->with('archive')
+        ->orderByRaw("FIELD(achievement, 'Juara', 'Naib Juara', 'Tempat Ketiga', 'Penyertaan')")
+        ->get();
+
+    $this->selectedActiveProgram = $program;
+    $this->activeProgramWinners  = $winners;
+    $this->showWinnerPortalModal = true;
+};
 ?>
 
 <div class="min-h-screen bg-[#f8fafc] relative">
@@ -167,6 +221,142 @@ $checkAnswer = function ($key) {
                 </a>
             </div>
         </section>
+
+        @if($activeAnnouncements->count() > 0)
+            <div class="mb-10 space-y-8 m-8">
+                @foreach($activeAnnouncements as $activeProgram)
+                    <div class="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-slate-900 via-gray-900 to-amber-950 text-white shadow-2xl p-8 md:p-10 border border-amber-500/20">
+
+                        {{-- Glowing Background Effects --}}
+                        <div class="absolute -top-24 -left-24 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                        <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-yellow-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                        <div class="relative z-10 space-y-8">
+
+                            {{-- TOP SECTION: Program Title, Image & Description (Full Width) --}}
+                            <div class="space-y-4 max-w-4xl">
+                                <div class="flex flex-wrap items-center gap-3">
+                                    <span class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs font-black tracking-widest uppercase backdrop-blur-md">
+                                        🏆 Keputusan Rasmi
+                                    </span>
+
+                                    @if($activeProgram->announcement_end_date)
+                                        <span class="inline-flex items-center gap-2 text-[11px] font-bold text-amber-200/80 bg-white/5 px-3.5 py-1.5 rounded-full border border-white/10">
+                                            <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                            Tamat Pengumuman: {{ \Illuminate\Support\Carbon::parse($activeProgram->announcement_end_date)->format('d/m/Y') }}
+                                        </span>
+                                    @endif
+                                </div>
+
+                                {{-- Image & Program Title Row --}}
+                                <div class="flex items-center gap-4 pt-1">
+                                    @php
+                                        $programImg = match(true) {
+                                            !empty($activeProgram->image_path) && str_starts_with($activeProgram->image_path, 'http') => $activeProgram->image_path,
+                                            !empty($activeProgram->image_path) => asset('storage/' . $activeProgram->image_path),
+                                            default => 'https://picsum.photos/seed/jpa-inovasi/200/200'
+                                        };
+                                    @endphp
+
+                                    <img src="{{ $programImg }}"
+                                         alt="{{ $activeProgram->title }}"
+                                         class="w-16 h-16 rounded-2xl object-cover border-2 border-amber-500/40 shadow-lg flex-shrink-0">
+
+                                    <h2 class="text-2xl md:text-3xl font-black leading-tight tracking-tight text-white">
+                                        {{ $activeProgram->title }}
+                                    </h2>
+                                </div>
+
+                                <p class="text-xs md:text-sm text-gray-300 font-medium leading-relaxed max-w-3xl">
+                                    {{ $activeProgram->description }}
+                                </p>
+                            </div>
+
+                            {{-- BOTTOM SECTION: 3 Big Podium Winner Cards --}}
+                            <div>
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                                    @forelse($activeProgram->winners->take(3) as $index => $winner)
+                                        @php
+                                            $cardBg = match($winner->achievement) {
+                                                'Juara' => 'bg-amber-500/20 border-amber-500/40 text-amber-200 shadow-xl shadow-amber-950/40',
+                                                'Naib Juara' => 'bg-slate-300/10 border-slate-300/30 text-slate-200',
+                                                'Tempat Ketiga' => 'bg-orange-500/20 border-orange-500/30 text-orange-200',
+                                                default => 'bg-white/5 border-white/10 text-gray-200'
+                                            };
+
+                                            $badgeBg = match($winner->achievement) {
+                                                'Juara' => 'bg-amber-400 text-slate-950',
+                                                'Naib Juara' => 'bg-slate-200 text-slate-950',
+                                                'Tempat Ketiga' => 'bg-orange-400 text-slate-950',
+                                                default => 'bg-gray-400 text-slate-950'
+                                            };
+
+                                            $medalIcon = match($winner->achievement) {
+                                                'Juara' => '🥇',
+                                                'Naib Juara' => '🥈',
+                                                'Tempat Ketiga' => '🥉',
+                                                default => '🎖️'
+                                            };
+
+                                            $winnerImagePath = $winner->archive->image_path ?? null;
+                                            $winnerImg = match(true) {
+                                                !empty($winnerImagePath) && str_starts_with($winnerImagePath, 'http') => $winnerImagePath,
+                                                !empty($winnerImagePath) => asset('storage/' . $winnerImagePath),
+                                                default => 'https://picsum.photos/seed/winner-' . ($index + 10) . '/600/800'
+                                            };
+                                        @endphp
+
+                                        <div class="relative overflow-hidden rounded-[2rem] border backdrop-blur-md flex flex-col justify-between transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl {{ $cardBg }}">
+
+                                            {{-- Tall Winner Project Image --}}
+                                            <div class="relative w-full h-60 sm:h-60 overflow-hidden bg-gray-900">
+                                                <img src="{{ $winnerImg }}"
+                                                     alt="{{ $winner->archive->project_name ?? 'Pemenang' }}"
+                                                     class="w-full h-full object-cover">
+
+                                                {{-- Dark Gradient Overlay --}}
+                                                <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
+
+                                                {{-- Floating Medal and Badge --}}
+                                                <div class="absolute top-3.5 left-3.5 right-3.5 flex items-center justify-between z-10">
+                                                    <span class="text-2xl drop-shadow-lg">{{ $medalIcon }}</span>
+                                                    <span class="text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-xl font-sans shadow-lg {{ $badgeBg }}">
+                                                        {{ $winner->achievement }}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {{-- Card Body --}}
+                                            <div class="p-5 flex-1 flex flex-col justify-between space-y-4">
+                                                <div>
+                                                    <h4 class="font-black text-white text-base leading-snug line-clamp-2">
+                                                        {{ $winner->archive->project_name ?? 'Tiada Tajuk' }}
+                                                    </h4>
+                                                </div>
+
+                                                <div class="pt-3 border-t border-white/10 flex items-center justify-between">
+                                                    <p class="text-xs font-semibold text-gray-300 truncate">
+                                                        👥 {{ $winner->archive->group_name ?? '-' }}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                        </div>
+                                    @empty
+                                        <div class="col-span-3 text-center py-12 bg-white/5 rounded-3xl border border-white/10 text-gray-400 text-xs font-bold">
+                                            Keputusan pemenang sedang dikemaskini.
+                                        </div>
+                                    @endforelse
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        @endif
 
         <main id="explore" class="relative z-10 max-w-7xl mx-auto px-6 pt-20 pb-32">
             <div class="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16">

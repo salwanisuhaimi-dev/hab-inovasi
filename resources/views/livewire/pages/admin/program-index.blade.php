@@ -47,6 +47,11 @@ state([
     // Visibility Settings
     'visibility_type' => 'all', // 'all' or 'program_participants'
     'target_program_id' => '',  // Bound to the single select dropdown in UI
+
+    'showAnnouncementModal' => false,
+    'selected_program_id'   => null,
+    'announcement_start_date' => '',
+    'announcement_end_date'   => '',
 ]);
 
 // Auto sync when "Sama seperti tarikh mula program" is toggled
@@ -326,6 +331,40 @@ $closeGlobalHistoryModal = function () {
     $this->showGlobalHistory = false;
 };
 
+$openAnnouncementModal = function ($programId) {
+    $this->resetValidation();
+    $program = Program::findOrFail($programId);
+
+    $this->selected_program_id = $program->id;
+    $this->announcement_start_date = $program->announcement_start_date
+        ? \Illuminate\Support\Carbon::parse($program->announcement_start_date)->format('Y-m-d\TH:i')
+        : '';
+    $this->announcement_end_date = $program->announcement_end_date
+        ? \Illuminate\Support\Carbon::parse($program->announcement_end_date)->format('Y-m-d\TH:i')
+        : '';
+
+    $this->showAnnouncementModal = true;
+};
+
+$saveAnnouncementDates = function () {
+    $this->validate([
+        'announcement_start_date' => 'required|date',
+        'announcement_end_date'   => 'nullable|date|after_or_equal:announcement_start_date',
+    ]);
+
+    $program = Program::findOrFail($this->selected_program_id);
+
+    $program->update([
+        'announcement_start_date' => \Illuminate\Support\Carbon::parse($this->announcement_start_date),
+        'announcement_end_date'   => $this->announcement_end_date
+            ? \Illuminate\Support\Carbon::parse($this->announcement_end_date)
+            : null,
+    ]);
+
+    $this->showAnnouncementModal = false;
+    session()->flash('success', 'Tarikh pengumuman berjaya dikemaskini.');
+};
+
 ?>
 
 <div class="p-6">
@@ -484,6 +523,21 @@ $closeGlobalHistoryModal = function () {
                         </td>
                         <td class="px-6 py-4 text-right whitespace-nowrap">
                             <div class="flex justify-end gap-3">
+                              {{-- Show Announcement Button only if program type supports it --}}
+                              @if($program->category?->has_winner_announcement)
+                                    <button wire:click="openAnnouncementModal({{ $program->id }})"
+                                          class="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors group relative"
+                                          title="Tetapan Pengumuman Pemenang">
+                                          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path>
+                                          </svg>
+
+                                          {{-- Active Indicator Dot if announcement dates are set --}}
+                                          @if($program->announcement_start_date)
+                                              <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-amber-500 rounded-full ring-2 ring-white"></span>
+                                          @endif
+                                    </button>
+                                @endif
                                 <button wire:click="edit({{ $program->id }})" class="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors group" title="Edit Program">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
@@ -861,6 +915,78 @@ $closeGlobalHistoryModal = function () {
             </div>
         </div>
     @endif
+
+    <!-- Announcement Modal -->
+    <div x-data="{ open: @entangle('showAnnouncementModal') }"
+     x-show="open"
+     x-cloak
+     class="fixed inset-0 z-50 overflow-y-auto"
+     style="display: none;">
+
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <!-- Backdrop -->
+        <div class="fixed inset-0 transition-opacity bg-gray-900/75 backdrop-blur-sm" x-on:click="open = false"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+        <!-- Modal Content Container -->
+        <div class="inline-block px-4 pt-5 pb-4 overflow-hidden text-left align-bottom transition-all transform bg-white rounded-[2.5rem] shadow-xl sm:my-8 sm:align-middle sm:max-w-md sm:w-full sm:p-8">
+
+            <!-- Header Icon & Title -->
+            <div class="text-center mb-6">
+                <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-3 shadow-inner">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-black text-gray-900">Tetapan Jadual Pengumuman</h3>
+                <p class="text-xs text-gray-500 font-medium mt-1">Tentukan tempoh pengumuman pemenang dipaparkan di portal.</p>
+            </div>
+
+            <!-- Input Fields -->
+            <div class="space-y-4">
+                <!-- Start Date Field -->
+                <div>
+                    <label class="block text-xs font-black text-gray-700 uppercase tracking-widest mb-1.5">
+                        Mula Tarikh Pengumuman <span class="text-red-500">*</span>
+                    </label>
+                    <input type="datetime-local"
+                           wire:model="announcement_start_date"
+                           class="w-full rounded-2xl border-gray-200 text-xs font-bold text-gray-800 focus:ring-amber-500 focus:border-amber-500 p-3 bg-gray-50/50">
+                    @error('announcement_start_date')
+                        <span class="text-xs text-red-500 font-bold mt-1 block">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <!-- End Date Field -->
+                <div>
+                    <label class="block text-xs font-black text-gray-700 uppercase tracking-widest mb-1.5">
+                        Tamat Tarikh Pengumuman <span class="text-gray-400 font-normal">(Pilihan)</span>
+                    </label>
+                    <input type="datetime-local"
+                           wire:model="announcement_end_date"
+                           class="w-full rounded-2xl border-gray-200 text-xs font-bold text-gray-800 focus:ring-amber-500 focus:border-amber-500 p-3 bg-gray-50/50">
+                    <p class="text-[10px] text-gray-400 mt-1">Biarkan kosong jika pengumuman ini tiada had tarikh tamat.</p>
+                    @error('announcement_end_date')
+                        <span class="text-xs text-red-500 font-bold mt-1 block">{{ $message }}</span>
+                    @enderror
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="mt-8 flex gap-3">
+                <button wire:click="saveAnnouncementDates"
+                        class="flex-1 py-3.5 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl font-bold text-sm shadow-md shadow-amber-100 transition-all">
+                    Simpan Jadual
+                </button>
+                <button x-on:click="open = false"
+                        class="py-3.5 px-5 bg-gray-100 text-gray-600 hover:bg-gray-200 rounded-2xl font-bold text-sm transition-all">
+                    Batal
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
 
     <!-- Global Activity Log Modal -->
     @if ($showGlobalHistory)

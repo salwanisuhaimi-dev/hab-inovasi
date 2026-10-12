@@ -15,6 +15,7 @@ state([
     'requires_submission' => false,
     'submission_slug' => '',
     'admin_submission_slug' => '',
+    'has_winner_announcement' => false,
 ]);
 
 $edit = function (ProgramType $programtype) {
@@ -24,8 +25,9 @@ $edit = function (ProgramType $programtype) {
     $this->is_active = $programtype->is_active;
     $this->editable = (bool) ($programtype->editable ?? true);
     $this->requires_submission = (bool) $programtype->requires_submission;
+    $this->has_winner_announcement = (bool) $programtype->has_winner_announcement;
     $this->submission_slug = $programtype->submission_slug ?? '';
-    $this->admin_submission_slug = $programType->admin_submission_slug ?? '';
+    $this->admin_submission_slug = $programtype->admin_submission_slug ?? '';
 
     $this->showModal = true;
 };
@@ -41,6 +43,7 @@ $save = function () {
         'is_active' => 'boolean',
         'editable' => 'boolean',
         'requires_submission' => 'boolean',
+        'has_winner_announcement' => 'boolean',
         'submission_slug' => $this->requires_submission ? 'required|string|max:255' : 'nullable|string|max:255',
         'admin_submission_slug' => 'required|string|max:255',
 
@@ -51,6 +54,7 @@ $save = function () {
         'is_active' => $this->is_active ?? true,
         'editable' => $this->editable ?? true,
         'requires_submission' => $this->requires_submission,
+        'has_winner_announcement' => $this->has_winner_announcement,
         'submission_slug' => $this->requires_submission ? $this->submission_slug : null,
         'admin_submission_slug' => $this->admin_submission_slug,
 
@@ -64,7 +68,7 @@ $save = function () {
         session()->flash('message', 'Kategori Program berjaya disimpan!');
     }
 
-    $this->reset(['editing', 'name', 'is_active', 'editable', 'requires_submission', 'submission_slug', 'admin_submission_slug']);
+    $this->reset(['editing', 'name', 'is_active', 'editable', 'requires_submission', 'has_winner_announcement', 'submission_slug', 'admin_submission_slug']);
     $this->showModal = false;
 };
 
@@ -82,7 +86,7 @@ $delete = function ($id) {
 };
 
 $openCreateModal = function() {
-    $this->reset(['editing', 'name', 'requires_submission', 'submission_slug', 'admin_submission_slug']);
+    $this->reset(['editing', 'name', 'requires_submission', 'has_winner_announcement', 'submission_slug', 'admin_submission_slug']);
     $this->is_active = true;
     $this->editable = true;
     $this->showModal = true;
@@ -119,6 +123,7 @@ $openCreateModal = function() {
                     <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest">Edit Penyertaan</th>
                     <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest">Link Penyertaan</th>
                     <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest">Link Penyertaan (Admin)</th>
+                    <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest">Pengumuman Pemenang</th>
                     <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest text-right">Tindakan</th>
                 </tr>
             </thead>
@@ -152,6 +157,13 @@ $openCreateModal = function() {
                             <code class="text-xs bg-gray-100 px-2 py-1 rounded text-gray-700 font-mono">
                                 {{ $programtype->admin_submission_slug ?? '-' }}
                             </code>
+                        </td>
+                        <td class="px-6 py-4">
+                            @if($programtype->has_winner_announcement)
+                                <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">Ya</span>
+                            @else
+                                <span class="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-bold">Tidak</span>
+                            @endif
                         </td>
 
                         <td class="px-6 py-4 text-right whitespace-nowrap">
@@ -201,24 +213,35 @@ $openCreateModal = function() {
                             @error('name') <span class="text-xs text-red-500 mt-1">{{ $message }}</span> @enderror
                         </div>
 
-                        {{-- Toggle Requires Submission --}}
-                        <div class="pt-2">
-                            <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="checkbox" wire:model.live="requires_submission" class="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                                <span class="text-sm font-bold text-gray-700">Terima Penyertaan?</span>
+                        <div class="space-y-3">
+                            {{-- Toggle Requires Submission --}}
+                            <label class="flex items-start gap-3.5 p-3.5 rounded-2xl border border-gray-100 bg-gray-50/50 hover:bg-gray-50 hover:border-gray-200 transition-all cursor-pointer">
+                                <input type="checkbox" wire:model.live="requires_submission" class="mt-0.5 w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500/20">
+                                <div class="flex-1">
+                                    <span class="block text-xs font-black text-gray-800 tracking-wide">Terima Penyertaan?</span>
+                                    <p class="text-[11px] font-medium text-gray-400 leading-tight mt-0.5">Nyahaktifkan jika kategori ini tidak menerima penyertaan.</p>
+                                </div>
+                            </label>
+
+                            {{-- Toggle Editable --}}
+                            <label class="flex items-start gap-3.5 p-3.5 rounded-2xl border border-gray-100 bg-gray-50/50 hover:bg-gray-50 hover:border-gray-200 transition-all cursor-pointer">
+                                <input type="checkbox" wire:model="editable" class="mt-0.5 w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500/20">
+                                <div class="flex-1">
+                                    <span class="block text-xs font-black text-gray-800 tracking-wide">Penyertaan Boleh Dikemaskini (Editable)?</span>
+                                    <p class="text-[11px] font-medium text-gray-400 leading-tight mt-0.5">Nyahaktifkan jika kategori ini tidak membolehkan penyertaan dikemaskini.</p>
+                                </div>
+                            </label>
+
+                            {{-- Toggle Winner Announcement --}}
+                            <label class="flex items-start gap-3.5 p-3.5 rounded-2xl border border-gray-100 bg-gray-50/50 hover:bg-gray-50 hover:border-gray-200 transition-all cursor-pointer">
+                                <input type="checkbox" wire:model.live="has_winner_announcement" class="mt-0.5 w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500/20">
+                                <div class="flex-1">
+                                    <span class="block text-xs font-black text-gray-800 tracking-wide">Pengumuman Pemenang</span>
+                                    <p class="text-[11px] font-medium text-gray-400 leading-tight mt-0.5">Nyahaktifkan jika kategori ini tidak melibatkan pengumuman pemenang.</p>
+                                </div>
                             </label>
                         </div>
-
-                        {{-- Toggle Editable --}}
-                        <div class="pt-2">
-                            <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="checkbox" wire:model="editable" class="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                                <span class="text-sm font-bold text-gray-700">Penyertaan Boleh Dikemaskini (Editable)?</span>
-                            </label>
-                            <p class="text-[11px] text-gray-400 mt-0.5">Nyahaktifkan jika kategori ini tidak membolehkan penyertaan untuk dikemaskini.</p>
-                        </div>
-
-
+                        
                         {{-- Medan Submission Slug --}}
                         @if($requires_submission)
                             <div class="pt-2">

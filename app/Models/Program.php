@@ -5,8 +5,8 @@ namespace App\Models;
 use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Models\QuizSubmission;
 
 class Program extends Model
 {
@@ -15,11 +15,6 @@ class Program extends Model
     use SoftDeletes;
 
     protected $guarded = [];
-
-    public function submissions()
-    {
-        return $this->hasMany(Submission::class);
-    }
 
     protected $fillable = [
         'title',
@@ -44,21 +39,34 @@ class Program extends Model
         'target_submission_ids',
         'other_submission_format',
         'submission_external_link',
-        'submission_pdf_form'
+        'submission_pdf_form',
+        'announcement_start_date',
+        'announcement_end_date',
     ];
 
+    /**
+     * Combine all casts inside the casts() method.
+     */
     protected function casts(): array
     {
         return [
-            'target_program_ids'    => 'array',
-            'target_submission_ids' => 'array',
+            'target_program_ids'      => 'array',
+            'target_submission_ids'   => 'array',
+            'announcement_start_date' => 'datetime',
+            'announcement_end_date'   => 'datetime',
+            'start_date'              => 'date',
+            'end_date'                => 'date',
         ];
     }
-
 
     public function category()
     {
         return $this->belongsTo(ProgramType::class, 'category_id');
+    }
+
+    public function submissions()
+    {
+        return $this->hasMany(Submission::class);
     }
 
     public function publication()
@@ -89,11 +97,11 @@ class Program extends Model
 
     public function competition()
     {
-        // One program. one detail competition (TOR)
         return $this->hasOne(Competition::class, 'program_id');
     }
 
-    public function quizSubmissions() {
+    public function quizSubmissions()
+    {
         return $this->hasMany(QuizSubmission::class);
     }
 
@@ -111,8 +119,7 @@ class Program extends Model
 
     public function targetedSubmissions()
     {
-        $ids = $this->targeted_submission_ids ?? [];
+        $ids = $this->target_submission_ids ?? [];
         return Submission::with('projectDetail')->whereIn('id', $ids)->get();
     }
-
 }

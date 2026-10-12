@@ -16,6 +16,7 @@ class ProgramType extends Model
         'submission_slug',
         'admin_submission_slug',
         'requires_submission',
+        'has_winner_announcement',
         'editable'
     ];
 
