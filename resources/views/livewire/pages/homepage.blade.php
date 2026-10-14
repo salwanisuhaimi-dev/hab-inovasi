@@ -112,6 +112,9 @@ $viewWinners = function ($programId) {
 ?>
 
 <div class="min-h-screen bg-[#f8fafc] relative">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Great+Vibes&display=swap" rel="stylesheet">
     <style>
     @keyframes slideInUp {
         0% {
@@ -126,6 +129,26 @@ $viewWinners = function ($programId) {
 
     .animate-slide-in {
         animation: slideInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes gold-shimmer {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+    }
+
+    .animate-gold-shimmer {
+        background: linear-gradient(110deg, #b45309 20%, #fef08a 45%, #ffffff 50%, #fef08a 55%, #b45309 80%);
+        background-size: 200% 100%;
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        -webkit-box-decoration-break: clone;
+        box-decoration-break: clone;
+        animation: gold-shimmer 3.5s infinite linear;
+    }
+
+    .font-script {
+        font-family: 'Great Vibes', 'Caveat', cursive;
     }
     </style>
     <!--<div class="fixed inset-0 pointer-events-none" style="z-index: 0; overflow: hidden;">
@@ -223,74 +246,103 @@ $viewWinners = function ($programId) {
         </section>
 
         @if($activeAnnouncements->count() > 0)
-            <div class="mb-10 space-y-8 m-8">
+            <div class="mb-10 space-y-6 m-12 max-w-6xl mx-auto">
+
+              {{-- Main Section Header --}}
+              <div class="text-center space-y-1 mb-10 py-2">
+
+                  <div class="py-2">
+                          <h2 class="pt-10 pb-4 font-script text-5xl sm:text-6xl md:text-7xl font-bold animate-gold-shimmer leading-relaxed inline-block px-10 filter drop-shadow-[0_2px_8px_rgba(245,158,11,0.25)]">
+                              &nbsp;Tahniah dan Syabas&nbsp;
+                          </h2>
+                  </div>
+
+                  <p class="text-xs md:text-sm font-extrabold uppercase tracking-[0.25em] text-slate-500">
+                      Kepada Semua Pemenang
+                  </p>
+              </div>
                 @foreach($activeAnnouncements as $activeProgram)
-                    <div class="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-slate-900 via-gray-900 to-amber-950 text-white shadow-2xl p-8 md:p-10 border border-amber-500/20">
+                    {{-- Collapsible Container --}}
+                    <div x-data="{ open: true }"
+                         class="bg-white rounded-2xl border border-slate-200/80 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
 
-                        {{-- Glowing Background Effects --}}
-                        <div class="absolute -top-24 -left-24 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
-                        <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-yellow-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                        {{-- Header / Toggle Bar --}}
+                        <div x-data="{ open: true }"
+                             class="bg-white rounded-3xl border border-slate-200/80 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
 
-                        <div class="relative z-10 space-y-8">
+                            {{-- Integrated Header & Toggle Bar --}}
+                            <button @click="open = !open"
+                                    type="button"
+                                    class="relative w-full p-6 md:p-10 flex items-center justify-between text-left bg-gradient-to-r from-slate-50 via-white to-blue-50/40 hover:bg-slate-100/60 transition-colors border-b border-slate-100 cursor-pointer group overflow-hidden">
 
-                            {{-- TOP SECTION: Program Title, Image & Description (Full Width) --}}
-                            <div class="space-y-4 max-w-4xl">
-                                <div class="flex flex-wrap items-center gap-3">
-                                    <span class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs font-black tracking-widest uppercase backdrop-blur-md">
-                                        🏆 Keputusan Rasmi
-                                    </span>
+                                {{-- Background Deco 1: Floating Graphic Cubes/Boxes --}}
+                                <div class="absolute -top-6 -left-6 w-24 h-24 border border-blue-500/20 rounded-2xl rotate-12 bg-blue-50/50 pointer-events-none"></div>
+                                <div class="absolute top-1/2 -left-10 w-16 h-16 border border-amber-400/30 rounded-xl -rotate-45 bg-amber-50/50 pointer-events-none"></div>
+                                <div class="absolute -bottom-8 -right-8 w-32 h-32 border border-blue-500/20 rounded-3xl -rotate-12 bg-blue-50/50 pointer-events-none"></div>
+                                <div class="absolute top-6 right-20 w-12 h-12 border border-amber-400/30 rounded-lg rotate-45 bg-amber-50/50 pointer-events-none"></div>
 
-                                    @if($activeProgram->announcement_end_date)
-                                        <span class="inline-flex items-center gap-2 text-[11px] font-bold text-amber-200/80 bg-white/5 px-3.5 py-1.5 rounded-full border border-white/10">
-                                            <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                            </svg>
-                                            Tamat Pengumuman: {{ \Illuminate\Support\Carbon::parse($activeProgram->announcement_end_date)->format('d/m/Y') }}
-                                        </span>
-                                    @endif
-                                </div>
+                                {{-- Background Deco 2: Soft Ambient Glow Spots --}}
+                                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-50/80 rounded-full blur-3xl pointer-events-none"></div>
+                                <div class="absolute -bottom-16 left-1/3 w-64 h-64 bg-amber-50/80 rounded-full blur-3xl pointer-events-none"></div>
 
-                                {{-- Image & Program Title Row --}}
-                                <div class="flex items-center gap-4 pt-1">
-                                    @php
-                                        $programImg = match(true) {
-                                            !empty($activeProgram->image_path) && str_starts_with($activeProgram->image_path, 'http') => $activeProgram->image_path,
-                                            !empty($activeProgram->image_path) => asset('storage/' . $activeProgram->image_path),
-                                            default => 'https://picsum.photos/seed/jpa-inovasi/200/200'
-                                        };
-                                    @endphp
+                                {{-- Background Deco 3: Gold Accent Lines Top & Bottom --}}
+                                <div class="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-[2px] bg-gradient-to-r from-transparent via-amber-400/80 to-transparent"></div>
+                                <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-48 h-[2px] bg-gradient-to-r from-transparent via-blue-500/50 to-transparent"></div>
 
-                                    <img src="{{ $programImg }}"
-                                         alt="{{ $activeProgram->title }}"
-                                         class="w-16 h-16 rounded-2xl object-cover border-2 border-amber-500/40 shadow-lg flex-shrink-0">
-
-                                    <h2 class="text-2xl md:text-3xl font-black leading-tight tracking-tight text-white">
+                                {{-- Centered Program Title Content --}}
+                                <div class="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-4 space-y-2">
+                                    <h3 class="text-xl sm:text-2xl md:text-3xl font-black text-slate-900 tracking-tight leading-snug max-w-3xl mx-auto">
                                         {{ $activeProgram->title }}
-                                    </h2>
+                                    </h3>
+
+                                    {{-- Short Gold Accent Underline --}}
+                                    <div class="w-16 h-1 rounded-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 shadow-sm shadow-amber-400/40 mt-1"></div>
                                 </div>
 
-                                <p class="text-xs md:text-sm text-gray-300 font-medium leading-relaxed max-w-3xl">
-                                    {{ $activeProgram->description }}
-                                </p>
-                            </div>
+                                {{-- Chevron Toggle Icon --}}
+                                <div class="relative z-10 p-3 rounded-2xl bg-white border border-slate-200/80 shadow-sm text-slate-600 transition-all duration-300 ml-4 flex-shrink-0 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-600"
+                                     :class="{ 'rotate-180 bg-blue-600 text-white border-blue-600': open }">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </div>
 
-                            {{-- BOTTOM SECTION: 3 Big Podium Winner Cards --}}
-                            <div>
-                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                                    @forelse($activeProgram->winners->take(3) as $index => $winner)
+                            </button>
+
+                            {{-- Expandable Content Body --}}
+                            <div x-show="open"
+                                 x-collapse
+                                 class="p-6 md:p-10 bg-gradient-to-b from-slate-50 via-slate-100/60 to-white border-t border-slate-100 space-y-8">
+
+                                {{-- 3 Winner Card Boxes: Susunan Podium Impresif (Naib Juara | JUARA | Tempat Ketiga) --}}
+                                @php
+                                    $juara = $activeProgram->winners->firstWhere('achievement', 'Juara');
+                                    $naibJuara = $activeProgram->winners->firstWhere('achievement', 'Naib Juara');
+                                    $tempatKetiga = $activeProgram->winners->firstWhere('achievement', 'Tempat Ketiga');
+
+                                    $orderedWinners = collect([$naibJuara, $juara, $tempatKetiga])->filter();
+                                    if($orderedWinners->isEmpty()) {
+                                        $orderedWinners = $activeProgram->winners->take(3);
+                                    }
+                                @endphp
+
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 items-end max-w-6xl mx-auto pt-4 pb-2">
+                                    @forelse($orderedWinners as $index => $winner)
                                         @php
-                                            $cardBg = match($winner->achievement) {
-                                                'Juara' => 'bg-amber-500/20 border-amber-500/40 text-amber-200 shadow-xl shadow-amber-950/40',
-                                                'Naib Juara' => 'bg-slate-300/10 border-slate-300/30 text-slate-200',
-                                                'Tempat Ketiga' => 'bg-orange-500/20 border-orange-500/30 text-orange-200',
-                                                default => 'bg-white/5 border-white/10 text-gray-200'
+                                            $isJuara = $winner->achievement === 'Juara';
+
+                                            $cardStyle = match($winner->achievement) {
+                                                'Juara' => 'bg-gradient-to-b from-white via-amber-50/30 to-amber-100/20 border-amber-400 ring-4 ring-amber-400/20 shadow-2xl shadow-amber-500/10 z-10 md:-translate-y-3 scale-100 md:scale-105',
+                                                'Naib Juara' => 'bg-white border-slate-300 shadow-lg shadow-slate-200/60 z-0',
+                                                'Tempat Ketiga' => 'bg-white border-orange-300 shadow-lg shadow-orange-950/5 z-0',
+                                                default => 'bg-white border-slate-200 shadow-md'
                                             };
 
                                             $badgeBg = match($winner->achievement) {
-                                                'Juara' => 'bg-amber-400 text-slate-950',
-                                                'Naib Juara' => 'bg-slate-200 text-slate-950',
-                                                'Tempat Ketiga' => 'bg-orange-400 text-slate-950',
-                                                default => 'bg-gray-400 text-slate-950'
+                                                'Juara' => 'bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 font-black shadow-amber-500/30',
+                                                'Naib Juara' => 'bg-slate-200 text-slate-900 font-black shadow-slate-300',
+                                                'Tempat Ketiga' => 'bg-gradient-to-r from-orange-400 to-amber-600 text-white font-black shadow-orange-500/20',
+                                                default => 'bg-blue-600 text-white font-black'
                                             };
 
                                             $medalIcon = match($winner->achievement) {
@@ -304,60 +356,76 @@ $viewWinners = function ($programId) {
                                             $winnerImg = match(true) {
                                                 !empty($winnerImagePath) && str_starts_with($winnerImagePath, 'http') => $winnerImagePath,
                                                 !empty($winnerImagePath) => asset('storage/' . $winnerImagePath),
-                                                default => 'https://picsum.photos/seed/winner-' . ($index + 10) . '/600/800'
+                                                default => 'https://picsum.photos/seed/winner-' . ($index + 12) . '/600/800'
                                             };
                                         @endphp
 
-                                        <div class="relative overflow-hidden rounded-[2rem] border backdrop-blur-md flex flex-col justify-between transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl {{ $cardBg }}">
+                                        <div class="relative group overflow-hidden rounded-[2.2rem] border transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl {{ $cardStyle }}">
 
-                                            {{-- Tall Winner Project Image --}}
-                                            <div class="relative w-full h-60 sm:h-60 overflow-hidden bg-gray-900">
-                                                <img src="{{ $winnerImg }}"
-                                                     alt="{{ $winner->archive->project_name ?? 'Pemenang' }}"
-                                                     class="w-full h-full object-cover">
+                                            {{-- Reben Khas untuk JUARA --}}
+                                            @if($isJuara)
+                                                <div class="absolute -top-1 -right-1 z-20 overflow-hidden w-28 h-28 pointer-events-none">
+                                                    <div class="bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 text-[10px] font-black uppercase tracking-wider py-1 text-center shadow-md rotate-45 translate-x-7 translate-y-4">
+                                                        UTAMA
+                                                    </div>
+                                                </div>
+                                            @endif
+
+                                            {{-- Banner Gambar Projek --}}
+                                            <div class="relative w-full {{ $isJuara ? 'h-60 sm:h-64' : 'h-48 sm:h-52' }} overflow-hidden bg-slate-900">
+                                                @if($winner->archive && $winner->archive->thumbnail)
+                                                    <img src="{{ asset('storage/' . $winner->archive->thumbnail) }}" 
+                                                         alt="{{ $winner->archive->project_name ?? 'Pemenang' }}" 
+                                                         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out">
+                                                @else
+                                                    <div class="w-full h-full flex items-center justify-center text-gray-500 bg-slate-800">
+                                                        <svg class="w-12 h-12 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                                        </svg>
+                                                    </div>
+                                                @endif
 
                                                 {{-- Dark Gradient Overlay --}}
-                                                <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
+                                                <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent pointer-events-none"></div>
 
                                                 {{-- Floating Medal and Badge --}}
-                                                <div class="absolute top-3.5 left-3.5 right-3.5 flex items-center justify-between z-10">
-                                                    <span class="text-2xl drop-shadow-lg">{{ $medalIcon }}</span>
-                                                    <span class="text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-xl font-sans shadow-lg {{ $badgeBg }}">
+                                                <div class="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
+                                                    <span class="text-3xl filter drop-shadow-md transform group-hover:scale-110 transition-transform duration-300">{{ $medalIcon }}</span>
+                                                    <span class="text-[10px] uppercase tracking-widest px-3.5 py-1.5 rounded-xl font-sans shadow-lg backdrop-blur-md {{ $badgeBg }}">
                                                         {{ $winner->achievement }}
+                                                    </span>
+                                                </div>
+
+                                                {{-- Nama Kumpulan --}}
+                                                <div class="absolute bottom-3 left-4 right-4 z-10">
+                                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-950/70 border border-white/10 text-white/90 text-[11px] font-bold backdrop-blur-md">
+                                                        👥 {{ $winner->archive->group_name ?? '-' }}
                                                     </span>
                                                 </div>
                                             </div>
 
-                                            {{-- Card Body --}}
-                                            <div class="p-5 flex-1 flex flex-col justify-between space-y-4">
+                                            {{-- Kandungan Kad --}}
+                                            <div class="p-6 flex-1 flex flex-col justify-between space-y-4">
                                                 <div>
-                                                    <h4 class="font-black text-white text-base leading-snug line-clamp-2">
+                                                    <h4 class="font-black text-slate-900 {{ $isJuara ? 'text-lg md:text-xl' : 'text-base' }} leading-snug line-clamp-2 group-hover:text-blue-950 transition-colors">
                                                         {{ $winner->archive->project_name ?? 'Tiada Tajuk' }}
                                                     </h4>
-                                                </div>
-
-                                                <div class="pt-3 border-t border-white/10 flex items-center justify-between">
-                                                    <p class="text-xs font-semibold text-gray-300 truncate">
-                                                        👥 {{ $winner->archive->group_name ?? '-' }}
-                                                    </p>
                                                 </div>
                                             </div>
 
                                         </div>
                                     @empty
-                                        <div class="col-span-3 text-center py-12 bg-white/5 rounded-3xl border border-white/10 text-gray-400 text-xs font-bold">
+                                        <div class="col-span-3 text-center py-12 bg-white rounded-2xl border border-slate-200 text-slate-400 text-xs font-bold shadow-xs">
                                             Keputusan pemenang sedang dikemaskini.
                                         </div>
                                     @endforelse
                                 </div>
                             </div>
-
                         </div>
-                    </div>
                 @endforeach
+
             </div>
         @endif
-
         <main id="explore" class="relative z-10 max-w-7xl mx-auto px-6 pt-20 pb-32">
             <div class="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16">
                 <div class="relative">

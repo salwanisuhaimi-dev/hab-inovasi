@@ -52,7 +52,7 @@ $edit = function (Archive $archive) {
     $this->track = $archive->track;
     $this->currentImage = $archive->thumbnail ?? '';
     $this->video_link = $archive->video_link;
-    $this->image = null; //thumbnail
+    $this->image = null;
 
     $this->selected_comps = [];
     foreach ($archive->competitions as $comp) {
@@ -63,9 +63,7 @@ $edit = function (Archive $archive) {
         ];
     }
 
-    //image_paths
-    $this->existing_images = $session->image_paths ?? [];
-    $paths = $session->image_paths ?? [];
+    $paths = $archive->image_paths ?? [];
     $this->image_slot_0 = $paths[0] ?? null;
     $this->image_slot_1 = $paths[1] ?? null;
     $this->image_slot_2 = $paths[2] ?? null;
@@ -74,7 +72,7 @@ $edit = function (Archive $archive) {
 };
 
 with([
-  'archives' => fn() => Archive::query()
+    'archives' => fn() => Archive::query()
           ->select('archives.*')
           ->with(['department', 'competitions'])
           ->latest()
@@ -97,91 +95,81 @@ with([
 ]);
 
 $save = function () {
-    $this->validate([
-        'department_id' => 'required',
-        'project_name' => 'required',
-        'group_name' => 'required',
+    // Dynamic validation rules to prevent string path rejection on edit
+    $rules = [
+        'department_id'  => 'required',
+        'project_name'   => 'required',
+        'group_name'     => 'required',
         'selected_comps' => 'required|array|min:1',
-        'image' => 'nullable|image|max:10420'
-    ]);
+    ];
 
-
-    if ($this->image) {
-        $temporaryPath = $this->image->getRealPath();
-        $extension = strtolower($this->image->getClientOriginalExtension());
-
-        $filename = 'archives/' . Str::random(40) . '.jpg';
-        $absoluteStoragePath = storage_path('app/public/' . $filename);
-
-        if (!file_exists(dirname($absoluteStoragePath))) {
-            mkdir(dirname($absoluteStoragePath), 0755, true);
-        }
-
-        switch ($extension) {
-            case 'jpeg':
-            case 'jpg':
-                $sourceImage = @imagecreatefromjpeg($temporaryPath);
-                break;
-            case 'png':
-                $sourceImage = @imagecreatefrompng($temporaryPath);
-                break;
-            case 'webp':
-                $sourceImage = @imagecreatefromwebp($temporaryPath);
-                break;
-            default:
-                $sourceImage = false;
-        }
-
-        if ($sourceImage) {
-            imagejpeg($sourceImage, $absoluteStoragePath, 70);
-            imagedestroy($sourceImage);
-            $payload['thumbnail'] = $filename;
-        } else {
-            $path = $this->image->store('archives', 'public');
-            $payload['thumbnail'] = $path;
-        }
+    if ($this->image && !is_string($this->image)) {
+        $rules['image'] = 'image|max:10420';
+    }
+    if ($this->image_slot_0 && !is_string($this->image_slot_0)) {
+        $rules['image_slot_0'] = 'image|max:10420';
+    }
+    if ($this->image_slot_1 && !is_string($this->image_slot_1)) {
+        $rules['image_slot_1'] = 'image|max:10420';
+    }
+    if ($this->image_slot_2 && !is_string($this->image_slot_2)) {
+        $rules['image_slot_2'] = 'image|max:10420';
     }
 
+    $this->validate($rules);
 
-    if (empty($this->image_slot_0) || empty($this->image_slot_1) || empty($this->image_slot_2)) {
-        $this->addError('image_slots', "Sila pastikan ketiga-tiga slot gambar diisi.");
-        return;
+    // Build base payload
+    $payload = [
+        'department_id' => $this->department_id,
+        'project_name'  => $this->project_name,
+        'group_name'    => $this->group_name,
+        'description'   => $this->description,
+        'track'         => $this->track,
+        'video_link'    => $this->video_link,
+    ];
+
+    // Ensure upload directory exists
+    $storageDir = storage_path('app/public/archives');
+    if (!file_exists($storageDir)) {
+        mkdir($storageDir, 0755, true);
     }
 
     $manager = new ImageManager(new Driver());
-    $finalPaths = [];
 
-    if (!file_exists(storage_path('app/public/archives'))) {
-        mkdir(storage_path('app/public/archives'), 0755, true);
+    // 1. Process Main Thumbnail (via Intervention Image)
+    if ($this->image && is_object($this->image) && method_exists($this->image, 'getRealPath')) {
+        $thumbFilename = 'thumb_' . Str::random(30) . '.webp';
+        $img = $manager->read($this->image->getRealPath());
+        $img->scale(width: 1200);
+        $encoded = $img->toWebp(80);
+
+        file_put_contents($storageDir . '/' . $thumbFilename, $encoded);
+        $payload['thumbnail'] = 'archives/' . $thumbFilename;
     }
 
+    // 2. Process Optional Image Slots
+    $finalPaths = [];
     $slots = [$this->image_slot_0, $this->image_slot_1, $this->image_slot_2];
 
     foreach ($slots as $slot) {
-        if (is_string($slot)) {
-            $finalPaths[] = $slot;
-        } elseif (is_object($slot) && method_exists($slot, 'getRealPath')) {
-            $filename = 'arc_' . uniqid() . '.webp';
-            $image = $manager->read($slot->getRealPath());
-            $image->scale(width: 1200);
-            $encoded = $image->toWebp(80);
+        if (!empty($slot)) {
+            if (is_string($slot)) {
+                $finalPaths[] = $slot;
+            } elseif (is_object($slot) && method_exists($slot, 'getRealPath')) {
+                $filename = 'arc_' . uniqid() . '.webp';
+                $image = $manager->read($slot->getRealPath());
+                $image->scale(width: 1200);
+                $encoded = $image->toWebp(80);
 
-            file_put_contents(storage_path('app/public/archives/' . $filename), $encoded);
-            $finalPaths[] = 'archives/' . $filename;
+                file_put_contents($storageDir . '/' . $filename, $encoded);
+                $finalPaths[] = 'archives/' . $filename;
+            }
         }
     }
 
-    $payload = [
-        'department_id' => $this->department_id,
-        'project_name' => $this->project_name,
-        'group_name' => $this->group_name,
-        'description' => $this->description,
-        'track' => $this->track,
-        'video_link' => $this->video_link,
-        'image_paths' => $finalPaths,
-    ];
+    $payload['image_paths'] = $finalPaths;
 
-
+    // 3. Create or Update Archive
     if ($this->editing) {
         $archive = Archive::find($this->editing);
         $archive->update($payload);
@@ -189,19 +177,18 @@ $save = function () {
         $archive = Archive::create($payload);
     }
 
+    // 4. Sync Pivot Data
     $pivotData = [];
     foreach ($this->selected_comps as $compId => $data) {
         if (!empty($data['active'])) {
             $pivotData[$compId] = [
                 'achievement' => $data['achievement'] ?? null,
-                'year' => $data['year'] ?? null,
+                'year'        => $data['year'] ?? null,
             ];
         }
     }
 
     $archive->competitions()->sync($pivotData);
-
-
 
     $this->reset();
     $this->showModal = false;
@@ -262,11 +249,9 @@ $exportExcel = function () {
                 Tambah Projek
               </button>
         </div>
-
     </div>
 
     <div class="flex flex-wrap items-center gap-3 mb-8">
-        <!-- 1. Search Input -->
         <div class="relative group w-80">
             <input
                 type="text"
@@ -325,7 +310,6 @@ $exportExcel = function () {
         </button>
     </div>
 
-
     @if (session()->has('message'))
         <div class="mb-4 p-4 bg-green-50 text-green-700 rounded-xl border border-green-100 font-bold">
             {{ session('message') }}
@@ -380,7 +364,6 @@ $exportExcel = function () {
                         {{ $archive->group_name }}
                     </div>
                     <span class="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
-
                         {{ $archive->department->code ?? 'N/A' }}
                     </span>
                 </td>
@@ -400,9 +383,6 @@ $exportExcel = function () {
                 @else
                     <span class="text-gray-300 text-xs italic">Tiada data</span>
                 @endif
-                    <!--<span class="text-[10px] font-bold bg-amber-50 text-amber-700 px-2 py-0.5 rounded border border-amber-100 uppercase">
-                        TREK {{ $archive->track }}
-                    </span>-->
                 </td>
                 <td class="px-6 py-4 text-center">
                     @if($archive->video_link)
@@ -448,15 +428,10 @@ $exportExcel = function () {
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
                     </button>
-                    <button wire:click="confirmDelete({{ $archive->id }})" class="p-2 hover:bg-red-50 rounded-xl transition text-gray-400 hover:text-red-600">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                    </button>
                 </td>
             </tr>
         @empty
-            @endforelse
+        @endforelse
     </tbody>
 </table>
 </div>
@@ -464,7 +439,6 @@ $exportExcel = function () {
 <div class="mt-10">
     {{ $archives->links() }}
 </div>
-
 
     @if($showModal)
         <div class="fixed inset-0 z-[100] overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
@@ -517,9 +491,8 @@ $exportExcel = function () {
 
                 <div>
                     <label class="block text-xs font-black text-gray-400 uppercase mb-1">Penerangan Projek</label>
-                        <textarea wire:model="description" rows="5"
-                            class="w-full rounded-2xl border-gray-200 bg-gray-50 focus:border-blue-500 focus:ring-blue-500 p-4">
-                        </textarea>
+                    <textarea wire:model="description" rows="5"
+                        class="w-full rounded-2xl border-gray-200 bg-gray-50 focus:border-blue-500 focus:ring-blue-500 p-4"></textarea>
                 </div>
 
                 <div class="space-y-4">
@@ -550,11 +523,9 @@ $exportExcel = function () {
                 </div>
 
                 <div>
-                    <div>
-                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Link Video (URL)</label>
-                        <input type="url" wire:model="video_link" placeholder="https://youtube.com/..."
-                            class="w-full rounded-2xl border-gray-100 bg-gray-50 p-4">
-                    </div>
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Link Video (URL)</label>
+                    <input type="url" wire:model="video_link" placeholder="https://youtube.com/..."
+                        class="w-full rounded-2xl border-gray-100 bg-gray-50 p-4">
                 </div>
 
                 <div class="mb-5">
@@ -704,12 +675,6 @@ $exportExcel = function () {
                     </div>
                 </div>
 
-
-                <!--<div>
-                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Penerangan Projek</label>
-                    <textarea wire:model="description" rows="4"
-                        class="w-full rounded-2xl border-gray-100 bg-gray-50 focus:border-blue-500 focus:ring-blue-500 p-4"></textarea>
-                </div>-->
                 <div class="pt-4 flex gap-3">
                     <button type="submit" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition">
                          {{ $editing ? 'Simpan Perubahan' : 'Simpan Projek' }}
@@ -752,7 +717,7 @@ $exportExcel = function () {
                         {{ $viewingArchive->project_name }}
                     </h2>
                     <span class="text-[10px] font-bold bg-amber-50 text-amber-700 px-2 py-0.5 rounded border border-amber-100 uppercase">
-                        TREK {{ $archive->track }}
+                        TREK {{ $viewingArchive->track }}
                     </span>
                 </div>
 
