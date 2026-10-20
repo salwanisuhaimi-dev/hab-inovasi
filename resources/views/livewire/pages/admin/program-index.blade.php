@@ -139,7 +139,7 @@ with([
           ->when($this->date_to, function ($query) {
               $query->whereDate('start_date', '<=', $this->date_to);
             })
-          ->paginate(12),
+          ->paginate(12, ['*'], 'page'),    
     'categories' => fn() => \App\Models\ProgramType::where('is_active', '1')->orderBy('name')->get(),
     'competitions' => fn() => \App\Models\Competition::latest()->get(),
     'globalActivities' => fn() => $this->showGlobalHistory
@@ -148,7 +148,7 @@ with([
                 }])
                 ->where('loggable_type', Program::class)
                 ->latest()
-                ->paginate(15)
+                ->paginate(15, ['*'], 'history_page')
             : [],
 ]);
 

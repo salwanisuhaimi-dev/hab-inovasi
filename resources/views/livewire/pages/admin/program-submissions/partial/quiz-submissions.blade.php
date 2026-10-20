@@ -86,6 +86,14 @@ $viewDetails = function ($id) {
                 </svg>
                 Kembali
             </a>
+            <button wire:click=""
+                 type="button"
+                 class="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-2xl shadow-md shadow-amber-100 transition duration-200">
+                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                     <path d="M19 4h-3V3a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v1H5a2 2 0 0 0-2 2v2a4 4 0 0 0 4 4h.26A7.002 7.002 0 0 0 11 17.92V19H8a1 1 0 0 0 0 2h8a1 1 0 0 0 0-2h-3v-1.08A7.002 7.002 0 0 0 16.74 12H17a4 4 0 0 0 4-4V6a2 2 0 0 0-2-2zM5 8V6h2v4.17A2 2 0 0 1 5 8zm14 0a2 2 0 0 1-2 2.17V6h2v2z"/>
+                 </svg>
+                 Umumkan Pemenang
+            </button>
         </div>
 
         {{-- Main Table --}}

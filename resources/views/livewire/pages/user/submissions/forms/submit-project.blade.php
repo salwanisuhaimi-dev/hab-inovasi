@@ -253,7 +253,7 @@ $downloadSecondDocument = function () {
                   </div>
               @endif
 
-              <div class="flex flex-wrap items-center gap-2">
+              <div class="flex flex-wrap items-center gap-2 self-start">
                   @if($program->formPublication && $program->formPublication->pdf_paths)
                       <button
                           wire:click="downloadDocument"
