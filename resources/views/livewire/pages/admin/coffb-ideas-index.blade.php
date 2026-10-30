@@ -8,11 +8,11 @@ layout('layouts.app');
 usesFileUploads();
 
 state([
-    'sessionId' => null,     
-    'location' => '',        
-    'session_date' => '',    
+    'sessionId' => null,
+    'location' => '',
+    'date_created' => '',
     'showModal' => false,
-    'modalCategory' => 'inovasi', 
+    'modalCategory' => 'inovasi',
     'newIdeas' => [],
     'showViewModal' => false,
     'selectedIdea' => null,
@@ -32,7 +32,7 @@ mount(function (CoffeeBreakSession $session) {
 
     $this->sessionId = $session->id;
     $this->location = $session->location;
-    $this->session_date = $session->session_date;
+    $this->date_created = $session->date_created;
 });
 
 $openAddModal = function ($category) {
@@ -44,7 +44,7 @@ $openAddModal = function ($category) {
 
 $addEmptyRow = function () {
     $this->newIdeas[] = [
-        'is_digital' => 'digital', 
+        'is_digital' => 'digital',
         'title' => '',
         'suggestion' => '',
         'action_taken' => '',
@@ -80,9 +80,9 @@ $saveMultipleIdeas = function () {
     }
 
     $this->showModal = false;
-    $this->newIdeas = []; 
+    $this->newIdeas = [];
     session()->flash('message', 'Idea berjaya ditambah!');
-    
+
     return $this->redirect(route('admin.coffb.ideas', $this->sessionId), navigate: true);
 };
 
@@ -107,11 +107,11 @@ $deleteIdea = function ($id) {
                 Sesi Coff-B
             </h2>
             <p class="text-slate-500 font-medium italic text-sm">
-                Tarikh: {{ \Carbon\Carbon::parse($session_date)->format('d F Y') }}
+                Tarikh: {{ \Carbon\Carbon::parse($date_created)->format('d F Y') }}
             </p>
         </div>
         <a href="{{ route('admin.coffb') }}" wire:navigate class="px-6 py-3 bg-slate-100 text-slate-600 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-200 transition">
-            ← Kembali
+            Kembali
         </a>
     </div>
 
@@ -149,7 +149,7 @@ $deleteIdea = function ($id) {
         <div class="fixed inset-0 z-[100] flex items-center justify-center p-4">
             <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" wire:click="$set('showModal', false)"></div>
             <div class="relative bg-white rounded-[3rem] shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto p-12 transform transition-all">
-                
+
                 <div class="mb-8">
                     <h3 class="text-2xl font-black uppercase tracking-tighter italic">Tambah Idea ({{ str_replace('_', ' ', $modalCategory) }})</h3>
                     <p class="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mt-1 italic">Catat setiap cadangan yang dibincangkan dalam sesi.</p>
@@ -177,7 +177,7 @@ $deleteIdea = function ($id) {
 
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div class="md:col-span-2 flex gap-8 items-center border-b border-slate-200 pb-4">
-                                    <span class="bg-slate-900 text-white w-7 h-7 rounded-xl flex items-center justify-center text-[10px] font-black shadow-lg shadow-slate-200 italic">#{{ $index+1 }}</span>                   
+                                    <span class="bg-slate-900 text-white w-7 h-7 rounded-xl flex items-center justify-center text-[10px] font-black shadow-lg shadow-slate-200 italic">#{{ $index+1 }}</span>
                                     <label class="flex items-center gap-3 cursor-pointer group/radio">
                                         <input type="radio" wire:model="newIdeas.{{ $index }}.is_digital" value="digital" class="w-5 h-5 text-blue-600 border-slate-300 focus:ring-blue-500">
                                         <span class="text-[10px] font-black uppercase tracking-widest text-slate-500">Digital</span>
@@ -215,7 +215,7 @@ $deleteIdea = function ($id) {
                             <span wire:loading>Memproses...</span>
                         </button>
                     </div>
-                </form>            
+                </form>
             </div>
         </div>
     @endif
@@ -223,7 +223,7 @@ $deleteIdea = function ($id) {
 @if($showViewModal && $selectedIdea)
     <div class="fixed inset-0 z-[100] flex items-center justify-center p-4">
         <div class="fixed inset-0 bg-slate-900/80 backdrop-blur-md" wire:click="closeViewModal"></div>
-        <div class="relative bg-white rounded-[3rem] shadow-2xl max-w-2xl w-full flex flex-col transform transition-all" 
+        <div class="relative bg-white rounded-[3rem] shadow-2xl max-w-2xl w-full flex flex-col transform transition-all"
              style="height: 80vh; max-height: 80vh; min-height: 300px;">
             <div class="p-10 pb-6 border-b border-slate-50 flex-none">
                 <div class="flex justify-between items-start">
@@ -238,9 +238,9 @@ $deleteIdea = function ($id) {
                     </button>
                 </div>
             </div>
-            <div class="flex-grow p-10 space-y-8" 
+            <div class="flex-grow p-10 space-y-8"
                  style="overflow-y: auto !important; -webkit-overflow-scrolling: touch;">
-                
+
                 <div>
                     <label class="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 block italic">Tajuk Projek/Idea</label>
                     <p class="text-xl font-black text-slate-900 uppercase italic leading-tight">{{ $selectedIdea->title }}</p>

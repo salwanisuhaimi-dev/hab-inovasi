@@ -165,9 +165,9 @@ $loadMoreSessions = function () {
                 </div>
 
                 <div class="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-12">
-                    <div class="lg:w-1/2 space-y-6 text-center lg:text-left">
+                    <div class="lg:w-2/4 space-y-6 text-center lg:text-left">
                         <div class="inline-flex items-center px-4 py-1.5 bg-orange-600/30 border border-orange-500/40 rounded-full shadow-inner">
-                            <span class="text-orange-300 text-[10px] font-black uppercase tracking-[0.3em]">Pembudayaan Keseronokan Bekerja</span>
+                            <span class="text-orange-300 text-[10px] font-black uppercase tracking-[0.3em]">Membudaya Inovasi, Mengukuh Kesejahteraan</span>
                         </div>
 
                         <h1 class="text-5xl md:text-7xl font-black leading-[1.1] font-serif flex flex-col lg:flex-row lg:items-center gap-6">
@@ -202,9 +202,8 @@ $loadMoreSessions = function () {
                                 }
                             </style>
                             <div class="relative">
-                                <span style="color: #fdf8f5;">The Coffee</span> <br/>
-                                <span class="text-orange-500 italic">Break</span>
-                                <span style="color: #ede0d4;">Session.</span>
+                                <span style="color: #f06616;" class="text-5xl">Coffee Break</span>
+                                <span style="color: #ede0d4;" class="text-5xl">Session (COFF-B)</span>
                             </div>
                         </h1>
 
@@ -213,31 +212,20 @@ $loadMoreSessions = function () {
                         </p>
                     </div>
 
-                    <div class="lg:w-1/2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div class="p-6 rounded-[2rem] border border-white/10" style="background-color: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px);">
-                            <div class="w-10 h-10 bg-orange-600 rounded-2xl flex items-center justify-center text-white font-bold mb-4 shadow-lg rotate-3">1</div>
-                            <h3 class="text-orange-400 font-black text-sm mb-1 uppercase">Idea Inovasi</h3>
-                            <p style="color: #d6d3d1;" class="text-[16px] leading-relaxed">Penambahbaikan Proses Kerja.</p>
-                        </div>
-
-                        <div class="p-6 rounded-[2rem] border border-white/10" style="background-color: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px);">
-                            <div class="w-10 h-10 bg-[#4a3728] rounded-2xl flex items-center justify-center text-orange-400 font-bold mb-4 shadow-lg -rotate-3 border border-orange-900/50">2</div>
-                            <h3 class="text-orange-400 font-black text-sm mb-1 uppercase">Idea Selain Inovasi</h3>
-                            <p style="color: #d6d3d1;" class="text-[16px] leading-relaxed">Kesejahteraan dan kerja berpasukan.</p>
+                    <div class="lg:w-2/4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="p-6 rounded-[2rem] border border-white/10 sm:col-span-2 flex items-center gap-6" style="background-color: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px);">
+                          <div class="w-12 h-12 bg-orange-600 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xl">✨</div>
+                          <div>
+                            <h3 class="text-orange-400 font-black text-sm mb-0.5 uppercase tracking-widest">Idea Inovasi</h3>
+                            <p style="color: #d6d3d1;" class="text-[16px] leading-relaxed">Penambahbaikan Proses Kerja atau Inisiatif Baharu (Digital atau Bukan Digital) yang meningkatkan kecekapan, kebersanan, dan kualiti penyampaian perkhidmatan.</p>
+                          </div>
                         </div>
 
                         <div class="p-6 rounded-[2rem] border border-white/10 sm:col-span-2 flex items-center gap-6" style="background-color: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px);">
-                            <div class="w-12 h-12 bg-orange-600 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xl">✨</div>
+                          <div class="w-12 h-12 bg-orange-600 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xl">✨</div>
                             <div>
-                                <h3 class="text-orange-400 font-black text-sm mb-0.5 uppercase tracking-widest">Mewujudkan Ruang Kondusif dan Kreatif</h3>
-                                <p style="color: #d6d3d1;" class="text-[14px] font-bold">Menggalakkan percambahan idea baharu tanpa kekangan birokrasi dalam suasana santai.</p>
-                            </div>
-                        </div>
-                        <div class="p-6 rounded-[2rem] border border-white/10 sm:col-span-2 flex items-center gap-6" style="background-color: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px);">
-                            <div class="w-12 h-12 bg-orange-600 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xl">✨</div>
-                            <div>
-                                <h3 class="text-orange-400 font-black text-sm mb-0.5 uppercase tracking-widest">Memperkasa komunikasi dua hala</h3>
-                                <p style="color: #d6d3d1;" class="text-[14px] font-bold">Meningkatkan interaksi antara pengurusan dan warga JPA tanpa jurang hierarki.</p>
+                              <h3 class="text-orange-400 font-black text-sm mb-0.5 uppercase tracking-widest">Idea Selain Inovasi</h3>
+                              <p style="color: #d6d3d1;" class="text-[16px] leading-relaxed">Cadangan pembudayaan persekitaran kerja positif, termasuk aspek keseronokan bekerja, aktiviti riadah, kebajikan, dan pengukuhan semangat berpasukan.</p>
                             </div>
                         </div>
                     </div>
@@ -305,164 +293,6 @@ $loadMoreSessions = function () {
                           </div>
                       @endif
                   </section>
-
-                  <section class="bg-white rounded-[32px] p-8 shadow-xl shadow-stone-200 border border-stone-100 relative overflow-hidden">
-                        <div class="absolute top-0 left-0 w-2 h-full bg-orange-600"></div>
-
-                        <h2 class="text-2xl font-bold mb-2"><i>Leave a review</i></h2>
-                        <p class="text-stone-400 text-xs mb-6 font-medium tracking-widest italic">Tinggalkan maklum balas anda...</p>
-
-                        @guest
-                            <div class="bg-[#faf7f2] rounded-2xl p-6 text-center border border-dashed border-stone-200 flex flex-col items-center py-8">
-                                <div class="p-3 bg-orange-50 text-orange-600 rounded-2xl mb-3">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
-                                    </svg>
-                                </div>
-                                <h4 class="text-sm font-bold text-stone-800 mb-1">Log Masuk Diperlukan</h4>
-                                <p class="text-stone-500 text-xs max-w-xs mb-5 leading-relaxed">Sila log masuk ke akaun anda terlebih dahulu untuk mula berkongsi ulasan atau pengalaman.</p>
-
-                                <a href="{{ route('login') }}?intended={{ urlencode(route('coff-b')) }}" class="inline-flex items-center gap-2 bg-[#3e2723] hover:bg-orange-700 text-white font-bold text-xs px-6 py-3 rounded-xl transition-all shadow-md shadow-stone-300">
-                                    <span>Log Masuk Sekarang</span>
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3 h-3">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-                                    </svg>
-                                </a>
-                            </div>
-                        @endguest
-
-                        @auth
-                            <form wire:submit.prevent="save" class="space-y-4">
-                                @if (session()->has('success'))
-                                  <div class="bg-green-50 border border-green-200 text-green-800 text-xs font-semibold p-4 rounded-2xl mb-4 flex items-center gap-2">
-                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4 text-green-600">
-                                          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                                      </svg>
-                                      <span>{{ session('success') }}</span>
-                                  </div>
-                                @endif
-                                <div class="flex items-center gap-2 bg-[#faf7f2] px-4 py-2.5 rounded-xl border border-stone-100">
-                                    <div class="w-5 h-5 rounded-full bg-orange-600 flex items-center justify-center text-[10px] text-white font-bold uppercase">
-                                        {{ substr(auth()->user()->name, 0, 1) }}
-                                    </div>
-                                    <span class="text-xs text-stone-600"><strong class="text-stone-900">{{ auth()->user()->name }}</strong></span>
-                                </div>
-
-                                <div>
-                                    <textarea
-                                        wire:model="body"
-                                        rows="4"
-                                        placeholder="Kongsikan sesuatu..."
-                                        class="w-full p-4 rounded-2xl bg-[#faf7f2] border-none focus:ring-2 focus:ring-orange-600 outline-none text-sm placeholder:text-stone-400 transition-all">
-                                    </textarea>
-
-                                    @error('body')
-                                        <span class="text-red-500 text-xs mt-1 block px-1">{{ $message }}</span>
-                                    @enderror
-                                </div>
-
-                                <div class="bg-[#faf7f2] p-4 rounded-2xl border border-stone-100 flex flex-col gap-1">
-                                     <label class="text-xs font-bold text-stone-500 uppercase tracking-wider">Berikan Penilaian:</label>
-                                     <div class="flex items-center gap-1.5 mt-1">
-                                          @for ($i = 1; $i <= 5; $i++)
-                                          <button type="button"
-                                                  wire:click="$set('rating', {{ $i }})"
-                                                  class="transition-all duration-200 transform hover:scale-125 focus:outline-none">
-
-                                                <svg xmlns="http://www.w3.org/2000/svg"
-                                                         viewBox="0 0 24 24"
-                                                         class="w-7 h-7 {{ $i <= $rating ? 'fill-amber-400 text-amber-400' : 'fill-none text-stone-300' }} transition-colors"
-                                                         stroke="currentColor"
-                                                         stroke-width="1.5">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499c.172-.436.784-.436.956 0l2.22 4.473 4.925.711c.48.069.672.66.326 1.005l-3.567 3.477.842 4.902c.08.47-.417.83-.838.608L12 18.754l-4.418 2.322c-.42.22-.919-.139-.838-.608l.842-4.903-3.567-3.477c-.346-.345-.154-.936.326-1.005l4.925-.711 2.22-4.472Z" />
-                                                </svg>
-                                            </button>
-                                            @endfor
-
-                                            <span class="text-xs font-bold text-stone-600 ml-2">
-                                                  ({{ $rating }}/5)
-                                            </span>
-                                      </div>
-                                </div>
-
-                                <button type="submit" class="w-full bg-[#3e2723] hover:bg-orange-700 text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-stone-300 flex items-center justify-center gap-2 group disabled:opacity-50" wire:loading.attr="disabled">
-                                    <span wire:loading.remove>Hantar</span>
-                                    <span wire:loading>Menghantar...</span>
-
-                                    <svg wire:loading.remove class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path d="M14 5l7 7m0 0l-7 7m7-7H3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                    </svg>
-                                </button>
-
-                            </form>
-                        @endauth
-                    </section>
-                    <section class="mt-12 space-y-6">
-                        <div class="flex items-center justify-between px-4">
-                            <h3 class="text-xl font-black text-stone-800 uppercase italic tracking-tighter">Maklum Balas Terkini</h3>
-                            <span class="text-[10px] font-black bg-orange-100 text-orange-700 px-3 py-1 rounded-full uppercase tracking-widest">3 Komen</span>
-                        </div>
-
-                        <div class="space-y-4">
-                            @forelse($this->reviews as $review)
-                                <div class="bg-white p-6 rounded-[32px] border border-stone-100 shadow-sm hover:shadow-md transition-all group">
-                                    <div class="flex items-center gap-4 mb-4">
-                                        <div class="w-10 h-10 rounded-xl bg-[#faf7f2] flex items-center justify-center text-stone-700 font-black text-xs shadow-inner uppercase">
-                                            @php
-                                                $words = explode(' ', $review->user->name);
-                                                $initials = isset($words[1])
-                                                    ? substr($words[0], 0, 1) . substr($words[1], 0, 1)
-                                                    : substr($words[0], 0, 2);
-                                            @endphp
-                                            {{ $initials }}
-                                        </div>
-                                        <div class="flex-1 min-w-0">
-                                              <div class="flex items-center gap-2 flex-wrap">
-                                                   <h4 class="text-sm font-black text-stone-800 uppercase leading-none truncate">
-                                                        {{ \Illuminate\Support\Str::words($review->user->name, 2, '') }}
-                                                   </h4>
-
-                                                   @auth
-                                                        @if($review->user_id === auth()->id())
-                                                            <button type="button"
-                                                                     wire:click="delete({{ $review->id }})"
-                                                                     wire:confirm="Adakah anda pasti mahu memadam ulasan ini?"
-                                                                     class="text-stone-400 hover:text-red-500 transition-colors focus:outline-none p-0.5 rounded"
-                                                                     title="Padam Ulasan">
-                                                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5">
-                                                                       <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.34 9m-4.72 0-.34-9m9.96-3.24l-.81 10.63a2.25 2.25 0 0 1-2.24 2.25H8.55a2.25 2.25 0 0 1-2.24-2.25L5.5 5.76M19.5 5.76A10.5 10.5 0 0 0 4.5 5.76M10.5 3.5h3" />
-                                                                  </svg>
-                                                             </button>
-                                                          @endif
-                                                    @endauth
-                                                </div>
-                                                <span class="text-[9px] text-stone-400 font-bold uppercase tracking-widest block mt-1">
-                                                      {{ $review->created_at->diffForHumans() }}
-                                                </span>
-                                        </div>
-
-                                        <div class="flex gap-0.5 text-orange-500 text-lg leading-none select-none">
-                                            @for ($i = 1; $i <= 5; $i++)
-                                                @if ($i <= $review->rating)
-                                                    <span class="text-amber-400">★</span>
-                                                @else
-                                                    <span class="text-stone-200">★</span>
-                                                @endif
-                                            @endfor
-                                        </div>
-                                    </div>
-
-                                    <p class="text-stone-600 text-sm leading-relaxed italic border-l-2 border-orange-100 pl-4">
-                                        "{{ $review->body }}"
-                                    </p>
-                                </div>
-                            @empty
-                                <div class="text-center py-8 bg-[#faf7f2]/50 border border-dashed border-stone-200 rounded-[32px] p-6">
-                                    <p class="text-stone-400 text-xs font-medium italic">Belum ada ulasan untuk halaman ini. Jadilah yang pertama memberikan maklum balas!</p>
-                                </div>
-                            @endforelse
-                        </div>
-                    </section>
                 </div>
 
                 <div class="lg:col-span-8">
@@ -579,173 +409,178 @@ $loadMoreSessions = function () {
                         {{ $this->ideas->links(data: ['scrollTo' => false]) }}
                     </div>
 
-                    <section class="mt-12"
-                        x-data="{
-                            modalOpen: false,
-                            activeImages: [],
-                            currentImageIndex: 0,
-                            openGallery(images) {
-                                if (images && images.length > 0) {
-                                    this.activeImages = images;
-                                    this.currentImageIndex = 0;
-                                    this.modalOpen = true;
-                                }
-                            },
-                            scrollLeft() {
-                                $refs.slider.scrollBy({ left: -260, behavior: 'smooth' });
-                            },
-                            scrollRight() {
-                                $refs.slider.scrollBy({ left: 260, behavior: 'smooth' });
-                            }
-                        }">
-
-                        <div class="flex items-center justify-between mb-4">
-                            <div>
-                                <h4 class="text-3xl font-black text-stone-800 italic">Sorotan Sesi</h4>
-                                <p class="text-stone-500 text-sm italic font-serif">Momen-momen dikongsi...</p>
-                            </div>
-
-                            @if(count($this->archiveSessions) > 4)
-                                <div class="flex items-center gap-1.5">
-                                    <button @click="scrollLeft()" type="button" class="w-8 h-8 border border-stone-200 bg-white rounded-full flex items-center justify-center hover:bg-stone-50 transition-all cursor-pointer shadow-sm">
-                                        <svg class="w-3.5 h-3.5 text-stone-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
-                                        </svg>
-                                    </button>
-                                    <button @click="scrollRight()" type="button" class="w-8 h-8 border border-stone-200 bg-white rounded-full flex items-center justify-center hover:bg-stone-50 transition-all cursor-pointer shadow-sm">
-                                        <svg class="w-3.5 h-3.5 text-stone-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
-                                        </svg>
-                                    </button>
-                                </div>
-                            @endif
-                        </div>
-
-                        <div x-ref="slider" class="flex gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-none pb-4 -mx-1 px-1">
-                            @forelse($this->archiveSessions as $session)
-                                @php
-                                    $sessionImages = $session->image_paths;
-                                    if (is_string($sessionImages)) {
-                                        $sessionImages = json_decode($sessionImages, true);
-                                    }
-                                    $sessionImages = is_array($sessionImages) ? array_values($sessionImages) : [];
-
-                                    $imagesJson = htmlspecialchars(json_encode($sessionImages), ENT_QUOTES, 'UTF-8');
-                                    $deptCode = $session->department->code ?? 'N/A';
-                                    $deptName = $session->department->name ?? 'N/A';
-
-                                    $day = \Carbon\Carbon::parse($session->date_created)->format('d');
-                                    $month = \Carbon\Carbon::parse($session->date_created)->format('M');
-                                    $formattedDate = \Carbon\Carbon::parse($session->date_created)->format('d M Y');
-
-                                    $coverImage = count($sessionImages) > 0 ? $sessionImages[0] : null;
-                                @endphp
-
-                                <div class="w-[220px] sm:w-[245px] shrink-0 snap-start flex flex-col group">
-
-                                    <div class="relative aspect-[4/3] bg-stone-100 rounded-[22px] overflow-hidden shadow-sm group-hover:shadow-md transition-shadow">
-                                        @if($coverImage)
-                                            <img src="/storage/{{ $coverImage }}" class="w-full h-full object-cover group-hover:scale-103 transition-transform duration-300" alt="Cover Sesi">
-                                        @else
-                                            <div class="w-full h-full flex items-center justify-center text-stone-300 text-xs">🖼️</div>
-                                        @endif
-
-                                        <div class="absolute top-3 left-3 bg-white rounded-lg shadow px-2 py-1 flex flex-col items-center min-w-[38px]">
-                                            <span class="text-sm font-black text-stone-800 leading-none">{{ $day }}</span>
-                                            <span class="text-[8px] font-bold text-stone-400 uppercase mt-0.5 tracking-wider">{{ $month }}</span>
-                                        </div>
-                                    </div>
-
-                                    <div class="pt-3 px-1 flex flex-col flex-grow">
-                                        <div class="flex items-center gap-1.5 mb-1">
-                                            <span class="text-[9px] font-black uppercase tracking-wider text-orange-600">
-                                                Pertandingan {{ $deptCode }}
-                                            </span>
-                                            <span class="text-[9px] font-bold text-stone-400 truncate max-w-[120px]">
-                                                • {{ $session->location }}
-                                            </span>
-                                        </div>
-
-                                        <h4 class="text-sm font-extrabold text-stone-900 line-clamp-1 group-hover:text-blue-600 transition-colors leading-tight">
-                                            {{ $deptName }}
-                                        </h4>
-
-                                        <p class="text-[10px] text-stone-400 font-medium mt-0.5 mb-3 line-clamp-2 leading-relaxed">
-                                            Sesi perkongsian idea santai bertempat di {{ $session->location }} pada {{ $formattedDate }}.
-                                        </p>
-
-                                        <!--<div class="mt-auto">
-                                            <button type="button"
-                                                @click="openGallery(JSON.parse($el.getAttribute('data-images')))"
-                                                data-images="{{ $imagesJson }}"
-                                                class="w-full bg-stone-600 hover:bg-purple-700 text-white text-[11px] font-bold py-2.5 px-3 rounded-lg transition-all shadow-sm shadow-purple-100 text-center cursor-pointer flex items-center justify-center gap-1">
-                                                <span>Lihat Gambar</span>
-                                            </button>
-                                        </div>-->
-                                    </div>
-                                </div>
-                            @empty
-                                <div class="w-full py-12 flex flex-col items-center justify-center bg-stone-50 border-2 border-dashed border-stone-200 rounded-[24px] opacity-70">
-                                    <span class="text-xl mb-1">💤</span>
-                                    <p class="text-[9px] font-black uppercase tracking-[0.2em] text-stone-400 italic">Tiada Rekod Gambar Sesi Ditemui</p>
-                                </div>
-                            @endforelse
-                        </div>
-
-                        <div x-show="modalOpen"
-                             class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-955/90 backdrop-blur-sm"
-                             x-transition:enter="transition ease-out duration-200"
-                             x-transition:enter-start="opacity-0"
-                             x-transition:enter-end="opacity-100"
-                             x-transition:leave="transition ease-in duration-150"
-                             x-transition:leave-start="opacity-100"
-                             x-transition:leave-end="opacity-0"
-                             x-cloak
-                             @keydown.escape.window="modalOpen = false">
-
-                            <div class="relative w-full max-w-2xl bg-white rounded-[32px] p-6 shadow-xl overflow-hidden flex flex-col items-center"
-                                 @click.away="modalOpen = false">
-
-                                <button @click="modalOpen = false" type="button" class="absolute top-4 right-4 z-10 text-stone-400 hover:text-stone-700 p-2 rounded-full hover:bg-stone-100 transition-colors">
-                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </button>
-
-                                <h4 class="text-sm font-black text-stone-800 uppercase tracking-widest mb-4">Sorotan Gambar Sesi</h4>
-
-                                <div class="relative w-full aspect-[4/3] bg-stone-50 rounded-2xl flex items-center justify-center overflow-hidden border border-stone-100">
-                                    <template x-if="activeImages.length > 0">
-                                        <img :src="'/storage/' + activeImages[currentImageIndex]" class="w-full h-full object-cover transition-all duration-300" alt="Gambar Sesi">
-                                    </template>
-
-                                    <button x-show="activeImages.length > 1"
-                                            @click="currentImageIndex = (currentImageIndex === 0) ? activeImages.length - 1 : currentImageIndex - 1"
-                                            class="absolute left-3 bg-white/90 hover:bg-white text-stone-800 p-2.5 rounded-full shadow-md hover:scale-105 transition-all">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
-                                        </svg>
-                                    </button>
-
-                                    <button x-show="activeImages.length > 1"
-                                            @click="currentImageIndex = (currentImageIndex === activeImages.length - 1) ? 0 : currentImageIndex + 1"
-                                            class="absolute right-3 bg-white/90 hover:bg-white text-stone-800 p-2.5 rounded-full shadow-md hover:scale-105 transition-all">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
-                                        </svg>
-                                    </button>
-                                </div>
-
-                                <div x-show="activeImages.length > 1" class="mt-3 text-xs font-bold text-stone-500 bg-stone-100 py-1 px-3 rounded-full">
-                                    <span x-text="currentImageIndex + 1"></span> / <span x-text="activeImages.length"></span>
-                                </div>
-                            </div>
-                        </div>
-                    </section>
                 </div>
             </div>
         </div>
     </div>
+
+    <div class="gap-10 ">
+      <section class="m-12"
+          x-data="{
+              modalOpen: false,
+              activeImages: [],
+              currentImageIndex: 0,
+              openGallery(images) {
+                  if (images && images.length > 0) {
+                      this.activeImages = images;
+                      this.currentImageIndex = 0;
+                      this.modalOpen = true;
+                  }
+              },
+              scrollLeft() {
+                  $refs.slider.scrollBy({ left: -260, behavior: 'smooth' });
+              },
+              scrollRight() {
+                  $refs.slider.scrollBy({ left: 260, behavior: 'smooth' });
+              }
+          }">
+
+          <div class="flex items-center justify-between mb-4">
+              <div>
+                  <h4 class="text-3xl font-black text-stone-800 italic">Sorotan Sesi</h4>
+                  <p class="text-stone-500 text-sm italic font-serif">Momen-momen dikongsi...</p>
+              </div>
+
+              @if(count($this->archiveSessions) > 4)
+                  <div class="flex items-center gap-1.5">
+                      <button @click="scrollLeft()" type="button" class="w-8 h-8 border border-stone-200 bg-white rounded-full flex items-center justify-center hover:bg-stone-50 transition-all cursor-pointer shadow-sm">
+                          <svg class="w-3.5 h-3.5 text-stone-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
+                          </svg>
+                      </button>
+                      <button @click="scrollRight()" type="button" class="w-8 h-8 border border-stone-200 bg-white rounded-full flex items-center justify-center hover:bg-stone-50 transition-all cursor-pointer shadow-sm">
+                          <svg class="w-3.5 h-3.5 text-stone-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
+                          </svg>
+                      </button>
+                  </div>
+              @endif
+          </div>
+
+          <div x-ref="slider" class="flex gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-none pb-4 -mx-1 px-1">
+              @forelse($this->archiveSessions as $session)
+                  @php
+                      $sessionImages = $session->image_paths;
+                      if (is_string($sessionImages)) {
+                          $sessionImages = json_decode($sessionImages, true);
+                      }
+                      $sessionImages = is_array($sessionImages) ? array_values($sessionImages) : [];
+
+                      $imagesJson = htmlspecialchars(json_encode($sessionImages), ENT_QUOTES, 'UTF-8');
+                      $deptCode = $session->department->code ?? 'N/A';
+                      $deptName = $session->department->name ?? 'N/A';
+
+                      $day = \Carbon\Carbon::parse($session->date_created)->format('d');
+                      $month = \Carbon\Carbon::parse($session->date_created)->format('M');
+                      $formattedDate = \Carbon\Carbon::parse($session->date_created)->format('d M Y');
+
+                      $coverImage = count($sessionImages) > 0 ? $sessionImages[0] : null;
+                  @endphp
+
+                  <div class="w-[220px] sm:w-[245px] shrink-0 snap-start flex flex-col group">
+
+                      <div class="relative aspect-[4/3] bg-stone-100 rounded-[22px] overflow-hidden shadow-sm group-hover:shadow-md transition-shadow">
+                          @if($coverImage)
+                              <img src="/storage/{{ $coverImage }}" class="w-full h-full object-cover group-hover:scale-103 transition-transform duration-300" alt="Cover Sesi">
+                          @else
+                              <div class="w-full h-full flex items-center justify-center text-stone-300 text-xs">🖼️</div>
+                          @endif
+
+                          <div class="absolute top-3 left-3 bg-white rounded-lg shadow px-2 py-1 flex flex-col items-center min-w-[38px]">
+                              <span class="text-sm font-black text-stone-800 leading-none">{{ $day }}</span>
+                              <span class="text-[8px] font-bold text-stone-400 uppercase mt-0.5 tracking-wider">{{ $month }}</span>
+                          </div>
+                      </div>
+
+                      <div class="pt-3 px-1 flex flex-col flex-grow">
+                          <div class="flex items-center gap-1.5 mb-1">
+                              <span class="text-[9px] font-black uppercase tracking-wider text-orange-600">
+                                  Pertandingan {{ $deptCode }}
+                              </span>
+                              <span class="text-[9px] font-bold text-stone-400 truncate max-w-[120px]">
+                                  • {{ $session->location }}
+                              </span>
+                          </div>
+
+                          <h4 class="text-sm font-extrabold text-stone-900 line-clamp-1 group-hover:text-blue-600 transition-colors leading-tight">
+                              {{ $deptName }}
+                          </h4>
+
+                          <p class="text-[10px] text-stone-400 font-medium mt-0.5 mb-3 line-clamp-2 leading-relaxed">
+                              Sesi perkongsian idea santai bertempat di {{ $session->location }} pada {{ $formattedDate }}.
+                          </p>
+
+                          <!--<div class="mt-auto">
+                              <button type="button"
+                                  @click="openGallery(JSON.parse($el.getAttribute('data-images')))"
+                                  data-images="{{ $imagesJson }}"
+                                  class="w-full bg-stone-600 hover:bg-purple-700 text-white text-[11px] font-bold py-2.5 px-3 rounded-lg transition-all shadow-sm shadow-purple-100 text-center cursor-pointer flex items-center justify-center gap-1">
+                                  <span>Lihat Gambar</span>
+                              </button>
+                          </div>-->
+                      </div>
+                  </div>
+              @empty
+                  <div class="w-full py-12 flex flex-col items-center justify-center bg-stone-50 border-2 border-dashed border-stone-200 rounded-[24px] opacity-70">
+                      <span class="text-xl mb-1">💤</span>
+                      <p class="text-[9px] font-black uppercase tracking-[0.2em] text-stone-400 italic">Tiada Rekod Gambar Sesi Ditemui</p>
+                  </div>
+              @endforelse
+          </div>
+
+          <div x-show="modalOpen"
+               class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-955/90 backdrop-blur-sm"
+               x-transition:enter="transition ease-out duration-200"
+               x-transition:enter-start="opacity-0"
+               x-transition:enter-end="opacity-100"
+               x-transition:leave="transition ease-in duration-150"
+               x-transition:leave-start="opacity-100"
+               x-transition:leave-end="opacity-0"
+               x-cloak
+               @keydown.escape.window="modalOpen = false">
+
+              <div class="relative w-full max-w-2xl bg-white rounded-[32px] p-6 shadow-xl overflow-hidden flex flex-col items-center"
+                   @click.away="modalOpen = false">
+
+                  <button @click="modalOpen = false" type="button" class="absolute top-4 right-4 z-10 text-stone-400 hover:text-stone-700 p-2 rounded-full hover:bg-stone-100 transition-colors">
+                      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                  </button>
+
+                  <h4 class="text-sm font-black text-stone-800 uppercase tracking-widest mb-4">Sorotan Gambar Sesi</h4>
+
+                  <div class="relative w-full aspect-[4/3] bg-stone-50 rounded-2xl flex items-center justify-center overflow-hidden border border-stone-100">
+                      <template x-if="activeImages.length > 0">
+                          <img :src="'/storage/' + activeImages[currentImageIndex]" class="w-full h-full object-cover transition-all duration-300" alt="Gambar Sesi">
+                      </template>
+
+                      <button x-show="activeImages.length > 1"
+                              @click="currentImageIndex = (currentImageIndex === 0) ? activeImages.length - 1 : currentImageIndex - 1"
+                              class="absolute left-3 bg-white/90 hover:bg-white text-stone-800 p-2.5 rounded-full shadow-md hover:scale-105 transition-all">
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
+                          </svg>
+                      </button>
+
+                      <button x-show="activeImages.length > 1"
+                              @click="currentImageIndex = (currentImageIndex === activeImages.length - 1) ? 0 : currentImageIndex + 1"
+                              class="absolute right-3 bg-white/90 hover:bg-white text-stone-800 p-2.5 rounded-full shadow-md hover:scale-105 transition-all">
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
+                          </svg>
+                      </button>
+                  </div>
+
+                  <div x-show="activeImages.length > 1" class="mt-3 text-xs font-bold text-stone-500 bg-stone-100 py-1 px-3 rounded-full">
+                      <span x-text="currentImageIndex + 1"></span> / <span x-text="activeImages.length"></span>
+                  </div>
+              </div>
+          </div>
+      </section>
+
+    </div>
+
 
     <x-footer />
 

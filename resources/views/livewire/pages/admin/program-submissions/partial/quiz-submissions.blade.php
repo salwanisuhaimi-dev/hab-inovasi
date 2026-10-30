@@ -2,6 +2,7 @@
 
 use App\Models\Program;
 use App\Models\QuizSubmission;
+use App\Models\Winner;
 use function Livewire\Volt\{layout, state, with, usesPagination};
 
 layout('layouts.app');
@@ -12,9 +13,17 @@ state([
     'selectedQuiz' => null,
     'showModal' => false,
     'filterDept' => '',
+
+    // Announcement Modal States
+    'showAnnounceModal' => false,
+    'selectedWinners' => [], // Map: [submission_id => 'Juara' / 'Naib Juara' / etc]
 ]);
 
 with([
+    'hasAnnouncedWinners' => fn() => Winner::whereHas('submission', function($q) {
+        $q->where('program_id', $this->program->id);
+    })->exists(),
+
     'quizSubmissions' => function() {
         return QuizSubmission::whereHas('submission', function($q) {
                 $q->where('program_id', $this->program->id);
@@ -42,10 +51,101 @@ $viewDetails = function ($id) {
     $this->showModal = true;
 };
 
+// Buka dan auto-pilih top 3 pemenang mengikut submission->program_id
+$openAnnounceModal = function () {
+    $this->selectedWinners = [];
+
+    // 1. Semak sekiranya pemenang program ini sudah disimpan di database
+    $existingWinners = Winner::whereHas('submission', function($q) {
+        $q->where('program_id', $this->program->id);
+    })->get();
+
+    if ($existingWinners->isNotEmpty()) {
+        foreach ($existingWinners as $winner) {
+            $this->selectedWinners[$winner->submission_id] = $winner->label;
+        }
+    } else {
+        // 2. Auto-ranking: Cari QuizSubmission melalui submission->program_id (Markah tertinggi, masa terpantas)
+        $topQuizSubmissions = QuizSubmission::whereHas('submission', function($q) {
+                $q->where('program_id', $this->program->id);
+            })
+            ->orderBy('score', 'desc')
+            ->orderBy('time_taken', 'asc')
+            ->take(3)
+            ->get();
+
+        $defaultLabels = ['Juara', 'Naib Juara', 'Tempat Ketiga'];
+
+        foreach ($topQuizSubmissions as $index => $qSub) {
+            if (isset($defaultLabels[$index]) && $qSub->submission_id) {
+                $this->selectedWinners[$qSub->submission_id] = $defaultLabels[$index];
+            }
+        }
+    }
+
+    $this->showAnnounceModal = true;
+};
+
+$toggleWinner = function ($submissionId, $defaultLabel = 'Juara') {
+    if (isset($this->selectedWinners[$submissionId])) {
+        unset($this->selectedWinners[$submissionId]);
+    } else {
+        $this->selectedWinners[$submissionId] = $defaultLabel;
+    }
+};
+
+$updateWinnerLabel = function ($submissionId, $label) {
+    if (isset($this->selectedWinners[$submissionId])) {
+        $this->selectedWinners[$submissionId] = $label;
+    }
+};
+
+$saveWinners = function () {
+    if (empty($this->selectedWinners)) {
+        $this->addError('winners_selection', 'Sila pilih sekurang-kurangnya seorang pemenang.');
+        return;
+    }
+
+    $positionMap = [
+        'Juara' => 1,
+        'Naib Juara' => 2,
+        'Tempat Ketiga' => 3,
+        'Saguhati' => 4,
+    ];
+
+    // DB Transaction ensures no duplicates and safe overwriting
+    \Illuminate\Support\Facades\DB::transaction(function () use ($positionMap) {
+
+        // 1. Delete all existing winners tied to this program's submissions first
+        Winner::whereHas('submission', function ($q) {
+            $q->where('program_id', $this->program->id);
+        })->delete();
+
+        // 2. Insert the fresh or updated winner list
+        foreach ($this->selectedWinners as $submissionId => $label) {
+            Winner::create([
+                'submission_id' => $submissionId,
+                'label'         => $label,
+                'position'      => $positionMap[$label] ?? 5,
+            ]);
+        }
+    });
+
+    $this->showAnnounceModal = false;
+    session()->flash('success', 'Keputusan pemenang kuiz berjaya dikemaskini!');
+};
 ?>
 
 <div>
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+
+        {{-- Flash Success Alert --}}
+        @if (session()->has('success'))
+            <div class="mb-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center justify-between">
+                <span>🎉 {{ session('success') }}</span>
+                <button type="button" @click="$el.parentElement.remove()" class="text-emerald-500 hover:text-emerald-700">✕</button>
+            </div>
+        @endif
 
         <div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
@@ -56,7 +156,7 @@ $viewDetails = function ($id) {
             <div class="flex items-center gap-3">
                 <div class="bg-blue-600 px-6 py-3 rounded-2xl text-white shadow-lg shadow-blue-100 text-center">
                     <p class="text-[10px] font-bold uppercase opacity-80 tracking-tighter">Jumlah Penyertaan Kuiz</p>
-                    <p class="text-2xl font-black">{{ $quizSubmissions->count() }}</p>
+                    <p class="text-2xl font-black">{{ $quizSubmissions->total() }}</p>
                 </div>
             </div>
         </div>
@@ -86,17 +186,28 @@ $viewDetails = function ($id) {
                 </svg>
                 Kembali
             </a>
-            <button wire:click=""
-                 type="button"
-                 class="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-2xl shadow-md shadow-amber-100 transition duration-200">
-                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                     <path d="M19 4h-3V3a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v1H5a2 2 0 0 0-2 2v2a4 4 0 0 0 4 4h.26A7.002 7.002 0 0 0 11 17.92V19H8a1 1 0 0 0 0 2h8a1 1 0 0 0 0-2h-3v-1.08A7.002 7.002 0 0 0 16.74 12H17a4 4 0 0 0 4-4V6a2 2 0 0 0-2-2zM5 8V6h2v4.17A2 2 0 0 1 5 8zm14 0a2 2 0 0 1-2 2.17V6h2v2z"/>
-                 </svg>
-                 Umumkan Pemenang
+
+            <button wire:click="openAnnounceModal"
+                    type="button"
+                    class="inline-flex items-center gap-2 px-5 py-2.5 {{ $hasAnnouncedWinners ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200' : 'bg-amber-500 hover:bg-amber-600 shadow-amber-200' }} text-white text-xs font-bold rounded-2xl shadow-md transition duration-200">
+
+                @if($hasAnnouncedWinners)
+                    {{-- Ikon Pensel / Kemaskini --}}
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    Kemaskini Pemenang
+                @else
+                    {{-- Ikon Piala / Pengumuman Baru --}}
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M19 4h-3V3a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v1H5a2 2 0 0 0-2 2v2a4 4 0 0 0 4 4h.26A7.002 7.002 0 0 0 11 17.92V19H8a1 1 0 0 0 0 2h8a1 1 0 0 0 0-2h-3v-1.08A7.002 7.002 0 0 0 16.74 12H17a4 4 0 0 0 4-4V6a2 2 0 0 0-2-2zM5 8V6h2v4.17A2 2 0 0 1 5 8zm14 0a2 2 0 0 1-2 2.17V6h2v2z"/>
+                    </svg>
+                    Umumkan Pemenang
+                @endif
             </button>
         </div>
 
-        {{-- Main Table --}}
+        {{-- Jadual Utama Senarai Peserta --}}
         <div class="bg-white overflow-hidden shadow-xl sm:rounded-[2.5rem] border border-gray-100">
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
@@ -115,20 +226,24 @@ $viewDetails = function ($id) {
                         @forelse($quizSubmissions as $sub)
                             @php
                                 $user = $sub->submission->user ?? null;
-                                $isTop3 = $loop->index < 3;
+                                $isTop3 = $loop->index < 3 && $quizSubmissions->currentPage() === 1;
 
                                 $rowClass = '';
                                 $badge = '';
 
-                                if ($loop->index === 0) {
-                                    $rowClass = 'bg-amber-50/60 hover:bg-amber-50 border-l-4 border-amber-500';
-                                    $badge = '🥇 ';
-                                } elseif ($loop->index === 1) {
-                                    $rowClass = 'bg-slate-50/80 hover:bg-slate-100 border-l-4 border-slate-400';
-                                    $badge = '🥈 ';
-                                } elseif ($loop->index === 2) {
-                                    $rowClass = 'bg-orange-50/60 hover:bg-orange-100 border-l-4 border-orange-400';
-                                    $badge = '🥉 ';
+                                if ($quizSubmissions->currentPage() === 1) {
+                                    if ($loop->index === 0) {
+                                        $rowClass = 'bg-amber-50/60 hover:bg-amber-50 border-l-4 border-amber-500';
+                                        $badge = '🥇 ';
+                                    } elseif ($loop->index === 1) {
+                                        $rowClass = 'bg-slate-50/80 hover:bg-slate-100 border-l-4 border-slate-400';
+                                        $badge = '🥈 ';
+                                    } elseif ($loop->index === 2) {
+                                        $rowClass = 'bg-orange-50/60 hover:bg-orange-100 border-l-4 border-orange-400';
+                                        $badge = '🥉 ';
+                                    } else {
+                                        $rowClass = 'hover:bg-gray-50/50';
+                                    }
                                 } else {
                                     $rowClass = 'hover:bg-gray-50/50';
                                 }
@@ -209,7 +324,143 @@ $viewDetails = function ($id) {
         </div>
     </div>
 
-    {{-- Details Inspection Modal --}}
+    {{-- ========================================================================= --}}
+    {{-- MODAL 1: ANNOUNCE WINNERS SELECTION & CONFIRMATION MODAL                  --}}
+    {{-- ========================================================================= --}}
+    <div x-data="{ open: @entangle('showAnnounceModal') }"
+         x-show="open"
+         x-cloak
+         class="fixed inset-0 z-50 overflow-y-auto"
+         style="display: none;">
+
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 transition-opacity bg-gray-900/75 backdrop-blur-xs" x-on:click="open = false"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+            <div class="inline-block px-4 pt-5 pb-4 overflow-hidden text-left align-bottom transition-all transform bg-white rounded-[2.5rem] shadow-2xl sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full sm:p-8 border border-gray-100">
+
+                {{-- Header --}}
+                <div class="flex justify-between items-start mb-6 pb-4 border-b border-gray-100">
+                    <div class="flex items-center gap-3">
+                        <div class="p-3 bg-amber-100 text-amber-700 rounded-2xl">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M19 4h-3V3a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v1H5a2 2 0 0 0-2 2v2a4 4 0 0 0 4 4h.26A7.002 7.002 0 0 0 11 17.92V19H8a1 1 0 0 0 0 2h8a1 1 0 0 0 0-2h-3v-1.08A7.002 7.002 0 0 0 16.74 12H17a4 4 0 0 0 4-4V6a2 2 0 0 0-2-2zM5 8V6h2v4.17A2 2 0 0 1 5 8zm14 0a2 2 0 0 1-2 2.17V6h2v2z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <span class="px-2.5 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-black uppercase rounded-full">
+                                Pengesahan Keputusan
+                            </span>
+                            <h3 class="text-xl font-black text-gray-900 mt-1">Umumkan Pemenang Kuiz</h3>
+                            <p class="text-xs text-gray-400 font-medium">3 pemenang teratas telah dipilih secara automatik mengikut markah dan masa terpantas.</p>
+                        </div>
+                    </div>
+                    <button x-on:click="open = false" class="text-gray-400 hover:text-gray-600 p-2 rounded-xl bg-gray-50">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+
+                @error('winners_selection')
+                    <div class="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold">
+                        {{ $message }}
+                    </div>
+                @enderror
+
+                {{-- Dapatkan senarai semua peserta melalui submission->program_id --}}
+                @php
+                    $allRanked = \App\Models\QuizSubmission::whereHas('submission', function($q) use ($program) {
+                            $q->where('program_id', $program->id);
+                        })
+                        ->with(['submission.user.department'])
+                        ->orderBy('score', 'desc')
+                        ->orderBy('time_taken', 'asc')
+                        ->get();
+                @endphp
+
+                <div class="border border-gray-100 rounded-2xl overflow-hidden max-h-[50vh] overflow-y-auto shadow-xs">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-gray-50 sticky top-0 border-b border-gray-100 text-gray-400 font-black uppercase text-[10px]">
+                            <tr>
+                                <th class="p-3 text-center w-12">Pilih</th>
+                                <th class="p-3 text-center w-12">Ked.</th>
+                                <th class="p-3">Peserta</th>
+                                <th class="p-3 text-center">Markah</th>
+                                <th class="p-3 text-center">Masa</th>
+                                <th class="p-3 text-center w-40">Label Anugerah</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 font-medium">
+                            @forelse($allRanked as $idx => $rItem)
+                                @php
+                                    $subId = $rItem->submission_id;
+                                    $isPicked = isset($selectedWinners[$subId]);
+                                    $u = $rItem->submission->user ?? null;
+                                @endphp
+                                <tr class="hover:bg-amber-50/30 transition-colors {{ $isPicked ? 'bg-amber-50/60' : '' }}">
+                                    <td class="p-3 text-center">
+                                        <input type="checkbox"
+                                               wire:click="toggleWinner({{ $subId }})"
+                                               {{ $isPicked ? 'checked' : '' }}
+                                               class="w-4 h-4 text-amber-500 rounded border-gray-300 focus:ring-amber-400 cursor-pointer">
+                                    </td>
+                                    <td class="p-3 text-center font-black text-gray-400">
+                                        #{{ $idx + 1 }}
+                                    </td>
+                                    <td class="p-3">
+                                        <div class="font-bold text-gray-900">{{ $u->name ?? 'N/A' }}</div>
+                                        <div class="text-[10px] text-gray-400">{{ $u->department->name ?? '-' }}</div>
+                                    </td>
+                                    <td class="p-3 text-center font-black text-amber-600">
+                                        {{ $rItem->score }}%
+                                    </td>
+                                    <td class="p-3 text-center font-mono text-gray-500">
+                                        {{ floor($rItem->time_taken / 60) > 0 ? floor($rItem->time_taken / 60) . 'm ' : '' }}{{ $rItem->time_taken % 60 }}s
+                                    </td>
+                                    <td class="p-3 text-center">
+                                        @if($isPicked)
+                                            <select wire:change="updateWinnerLabel({{ $subId }}, $event.target.value)"
+                                                    class="py-1 px-2.5 rounded-lg border border-amber-300 bg-white text-gray-800 text-xs font-bold focus:border-amber-500 focus:ring-0">
+                                                <option value="Juara" {{ $selectedWinners[$subId] === 'Juara' ? 'selected' : '' }}>🥇 Juara</option>
+                                                <option value="Naib Juara" {{ $selectedWinners[$subId] === 'Naib Juara' ? 'selected' : '' }}>🥈 Naib Juara</option>
+                                                <option value="Tempat Ketiga" {{ $selectedWinners[$subId] === 'Tempat Ketiga' ? 'selected' : '' }}>🥉 Tempat Ketiga</option>
+                                                <option value="Saguhati" {{ $selectedWinners[$subId] === 'Saguhati' ? 'selected' : '' }}>🎖️ Saguhati</option>
+                                            </select>
+                                        @else
+                                            <span class="text-gray-300 text-[11px] italic">Tidak Dipilih</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="6" class="p-8 text-center text-gray-400 font-bold">Tiada data penyertaan untuk diumumkan.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+
+                {{-- Footer Controls --}}
+                <div class="mt-6 flex items-center justify-between pt-4 border-t border-gray-100">
+                    <p class="text-xs text-gray-500 font-medium">
+                        Jumlah Pemenang Dipilih: <span class="font-bold text-amber-600">{{ count($selectedWinners) }}</span>
+                    </p>
+                    <div class="flex items-center gap-2">
+                        <button x-on:click="open = false" type="button" class="px-5 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-bold transition">
+                            Batal
+                        </button>
+                        <button wire:click="saveWinners" type="button" class="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold shadow-md shadow-amber-200 transition">
+                            Sahkan & Umumkan
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    {{-- ========================================================================= --}}
+    {{-- MODAL 2: DETAILS INSPECTION MODAL                                         --}}
+    {{-- ========================================================================= --}}
     <div x-data="{ open: @entangle('showModal') }"
          x-show="open"
          x-cloak
@@ -218,7 +469,6 @@ $viewDetails = function ($id) {
 
         <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
             <div class="fixed inset-0 transition-opacity bg-gray-900 bg-opacity-75" x-on:click="open = false"></div>
-
             <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
             <div class="inline-block px-4 pt-5 pb-4 overflow-hidden text-left align-bottom transition-all transform bg-white rounded-[2.5rem] shadow-xl sm:my-8 sm:align-middle sm:max-w-xl sm:w-full sm:p-8">

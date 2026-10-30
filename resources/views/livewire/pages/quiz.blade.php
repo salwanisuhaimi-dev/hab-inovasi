@@ -198,7 +198,7 @@ $submitScore = function ($score, $totalQuestions, $correctAnswers, $timeTaken) {
                 <div class="relative z-10 grid lg:grid-cols-2 gap-12 items-center">
                     <div class="space-y-6 text-center lg:text-left">
                         <div class="inline-flex items-center px-4 py-1.5 bg-emerald-600/30 border border-emerald-500/40 rounded-full">
-                            <span class="text-emerald-300 text-[9px] font-black uppercase tracking-[0.3em]">UJI PENGETAHUAN</span>
+                            <span class="text-emerald-300 text-[9px] font-black uppercase tracking-[0.3em]">JOM UJI PENGETAHUAN ANDA</span>
                         </div>
 
                         <div class="flex flex-col lg:flex-row items-center gap-6">
@@ -221,25 +221,25 @@ $submitScore = function ($score, $totalQuestions, $correctAnswers, $timeTaken) {
                         <ul class="space-y-3">
                             <li class="flex items-start gap-3 text-sm text-emerald-50/80">
                                 <span class="text-amber-500 font-bold">•</span>
-                                Terbuka kepada semua warga jabatan yang sah.
+                                Terbuka kepada semua warga JPA
                             </li>
                             <li class="flex items-start gap-3 text-sm text-emerald-50/80">
                                 <span class="text-amber-500 font-bold">•</span>
-                                Setiap peserta hanya dibenarkan menjawab satu kali sahaja.
+                                Setiap peserta hanya dibenarkan menjawab satu kali sahaja
                             </li>
                             <li class="flex items-start gap-3 text-sm text-emerald-50/80">
                                 <span class="text-amber-500 font-bold">•</span>
-                                Masa menjawab adalah terhad (5-10 minit mengikut kategori).
+                                Masa menjawab adalah 5 minit
                             </li>
                             <li class="flex items-start gap-3 text-sm text-emerald-50/80">
                                 <span class="text-amber-500 font-bold">•</span>
-                                Markah lulus minimum adalah 80% untuk sijil digital.
+                                Markah lulus minimum adalah 80% untuk sijil digital
                             </li>
                         </ul>
 
                         <div class="mt-6 pt-4 border-t border-white/5">
                             <p class="text-[10px] text-emerald-200/50 uppercase tracking-widest italic">
-                                *Keputusan penganjur adalah muktamad.
+                                *Keputusan pertandingan adalah muktamad
                             </p>
                         </div>
                     </div>

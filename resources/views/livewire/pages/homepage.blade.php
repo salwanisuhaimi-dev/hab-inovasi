@@ -3,6 +3,7 @@
 use App\Models\Archive;
 use App\Models\Quiz;
 use App\Models\Program;
+use App\Models\Winner;
 use App\Models\ArchiveCompetition;
 use function Livewire\Volt\{layout, with, state, mount};
 use Illuminate\Support\Carbon;
@@ -20,6 +21,51 @@ state([
     'activeProgramWinners'  => [],
 ]);
 
+// Helper function to load winners (ArchiveCompetition first, fallback to winners table)
+$loadProgramWinners = function ($program) {
+    $year = $program->start_date
+        ? Carbon::parse($program->start_date)->year
+        : Carbon::now()->year;
+
+    // 1. Check archive_competitions table first
+    $winners = ArchiveCompetition::where('competition_id', $program->competition_id)
+        ->where('year', $year)
+        ->with('archive.department')
+        ->orderByRaw("FIELD(achievement, 'Juara', 'Naib Juara', 'Tempat Ketiga', 'Penyertaan')")
+        ->get();
+
+    // 2. Fallback to winners table if empty
+    if ($winners->isEmpty()) {
+        $rawWinners = Winner::whereHas('submission', function ($q) use ($program) {
+                $q->where('program_id', $program->id);
+            })
+            ->with(['submission.user.department'])
+            ->orderBy('position', 'asc')
+            ->get();
+
+        $winners = $rawWinners->map(function ($winner) {
+            $submission = $winner->submission;
+            $user = $submission->user ?? null;
+
+            return (object) [
+                'id'          => $winner->id,
+                'achievement' => $winner->label,
+                'archive'     => (object) [
+                    'project_name' => $submission->project_name ?? $user->name,
+                    'group_name'   => $submission->group_name ?? $user->department->name,
+                    'thumbnail'    => $submission->thumbnail ?? null,
+                    'description'  => $submission->description ?? null,
+                    'department'   => (object) [
+                        'name' => $user->department->name ?? ($submission->department->name ?? '-')
+                    ],
+                ],
+            ];
+        });
+    }
+
+    return $winners;
+};
+
 with([
     'projects' => Archive::latest()->get(),
 
@@ -31,43 +77,31 @@ with([
         ->latest()
         ->get(),
 
-        // Fetch active announcement programs together with their archive competition winners
-            'activeAnnouncements' => function () {
-                $now = Carbon::now();
-
-                return Program::query()
-                    ->whereNotNull('announcement_start_date')
-                    ->whereRaw('announcement_start_date <= NOW()')
-                    ->where(function ($query) {
-                        $query->whereNull('announcement_end_date')
-                              ->orWhereRaw('announcement_end_date >= NOW()');
-                    })
-                    ->whereHas('category', function ($q) {
-                        $q->where('has_winner_announcement', 1);
-                    })
-                    ->with(['category'])
-                    ->get()
-                    ->map(function ($program) {
-                        // Attach the archived winners directly to each active program object
-                        $year = $program->start_date
-                            ? Carbon::parse($program->start_date)->year
-                            : Carbon::now()->year;
-
-                        $program->winners = ArchiveCompetition::where('competition_id', $program->competition_id)
-                            ->where('year', $year)
-                            ->with('archive')
-                            ->orderByRaw("FIELD(achievement, 'Juara', 'Naib Juara', 'Tempat Ketiga', 'Penyertaan')")
-                            ->get();
-
-                        return $program;
-                    });
-            }
+    // Fetch active announcement programs and attach their winners
+    'activeAnnouncements' => function () use ($loadProgramWinners) {
+        return Program::query()
+            ->whereNotNull('announcement_start_date')
+            ->whereRaw('announcement_start_date <= NOW()')
+            ->where(function ($query) {
+                $query->whereNull('announcement_end_date')
+                      ->orWhereRaw('announcement_end_date >= NOW()');
+            })
+            ->whereHas('category', function ($q) {
+                $q->where('has_winner_announcement', 1);
+            })
+            ->with(['category'])
+            ->get()
+            ->map(function ($program) use ($loadProgramWinners) {
+                $program->winners = $loadProgramWinners($program);
+                return $program;
+            });
+    }
 ]);
 
 mount(function () {
     $data = Quiz::inRandomOrder()->first();
 
-    if($data) {
+    if ($data) {
         $this->activeQuestion = [
             'id'       => $data->id,
             'text'     => $data->question,
@@ -86,29 +120,19 @@ mount(function () {
 $checkAnswer = function ($key) {
     if ($this->userAnswer === null) {
         $this->userAnswer = $key;
-
         $lowercaseKey = strtolower($key);
-
         $this->isCorrect = ($lowercaseKey === $this->activeQuestion['answer']);
     }
 };
 
-$viewWinners = function ($programId) {
+$viewWinners = function ($programId) use ($loadProgramWinners) {
     $program = Program::findOrFail($programId);
-    $year = $program->start_date
-        ? Carbon::parse($program->start_date)->year
-        : Carbon::now()->year;
-
-    $winners = ArchiveCompetition::where('competition_id', $program->competition_id)
-        ->where('year', $year)
-        ->with('archive')
-        ->orderByRaw("FIELD(achievement, 'Juara', 'Naib Juara', 'Tempat Ketiga', 'Penyertaan')")
-        ->get();
 
     $this->selectedActiveProgram = $program;
-    $this->activeProgramWinners  = $winners;
+    $this->activeProgramWinners  = $loadProgramWinners($program);
     $this->showWinnerPortalModal = true;
 };
+
 ?>
 
 <div class="min-h-screen bg-[#f8fafc] relative">
@@ -167,7 +191,7 @@ $viewWinners = function ($programId) {
 
         <header class="relative py-32 px-6 bg-gray-900 overflow-visible">
             <div class="absolute inset-0 z-0 overflow-hidden">
-                <img src="{{ asset('images/corporate.jpg') }}"
+                <img src="{{ asset('images/corporate.jpeg') }}"
                     class="w-full h-full object-cover opacity-40 scale-125 transform"
                     style="object-position: center;"
                     alt="Innovation Background">
@@ -177,11 +201,11 @@ $viewWinners = function ($programId) {
 
             <div class="max-w-4xl mx-auto text-center relative z-10">
                  <h2 class="text-5xl md:text-7xl font-black text-white mb-8 tracking-tighter leading-tight">
-                    Teroka Idea <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">Masa Depan</span> Melalui Inovasi.
+                    Memacu Inovasi, <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400"><br>Merealisasi Reformasi. </span>
                 </h2>
 
-                <p class="text-lg text-gray-300 max-w-2xl mx-auto leading-relaxed mb-10">
-                    Himpunan idea kreatif dan projek digital warga jabatan yang memacu transformasi dan kecemerlangan perkhidmatan.
+                <p class="text-lg text-gray-300 max-w-3xl mx-auto leading-relaxed mb-10">
+                    Platform sehenti inovasi JPA yang menghubungkan idea, pengetahuan, teknologi dan warga untuk meneroka peluang penambahbaikan serta menghasilkan penyelesaian yang memberi nilai tambah kepada organisasi dan perkhidmatan awam.
                 </p>
 
                 <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -205,7 +229,7 @@ $viewWinners = function ($programId) {
                             </svg>
                         </div>
                         <h3 class="text-xl font-bold text-gray-900 group-hover:text-white mb-2">Arkib Inovasi</h3>
-                        <p class="text-gray-500 group-hover:text-blue-100 text-sm leading-relaxed">Himpunan projek kreatif yang telah berjaya dilaksanakan.</p>
+                        <p class="text-gray-500 group-hover:text-blue-100 text-sm leading-relaxed">Himpunan projek-projek inovasi warga JPA yang telah dipertandingkan.</p>
                     </div>
                 </a>
                 <a href="{{ route('coff-b') }}" wire:navigate class="flex group">
@@ -219,7 +243,7 @@ $viewWinners = function ($programId) {
                             </svg>
                         </div>
                         <h3 class="text-xl font-bold text-gray-900 group-hover:text-white mb-2">Coffee Break (Coff-B)</h3>
-                        <p class="text-gray-500 group-hover:text-orange-100 text-sm leading-relaxed">Ruang santai untuk berkongsi idea pantas secara spontan bagi warga JPA.</p>
+                        <p class="text-gray-500 group-hover:text-orange-100 text-sm leading-relaxed">Ruang santai bagi menggalakkan percambahan idea baharu melalui interaksi antara warga & pihak pengurusan.</p>
                     </div>
                 </a>
 
@@ -261,13 +285,15 @@ $viewWinners = function ($programId) {
                     </p>
                 </div>
 
-                {{-- Container Grid Flexbox: Menyusun 2-3 Kad Sebelah-Menyebelah & Auto-Center Jika Baki 1 Kad --}}
-                <div class="flex flex-wrap justify-center gap-8 items-start">
+                {{-- 1. Container Flexbox: items-stretch memastikan kedua-dua blok sebaris ditarik sama tinggi --}}
+                <div class="flex flex-wrap justify-center gap-8 items-stretch">
                     @foreach($activeAnnouncements as $activeProgram)
-                    <div class="w-full lg:w-[calc(50%-1rem)] xl:w-[calc(50%-1rem)] transition-all duration-300 rounded-3xl border-2 border-amber-400/60 shadow-[0_0_30px_rgba(245,158,11,0.25)] overflow-hidden group">
 
-                        {{-- Main Program Header (Normal / Compact Height) --}}
-                        <div class="relative w-full p-5 sm:p-6 flex items-center justify-center text-center bg-black border-amber-400/40 overflow-hidden">
+                    {{-- 2. Kad Program Luar: Dibuang h-full, ditambah flex flex-col supaya ia meregang seragam --}}
+                    <div class="w-full lg:w-[calc(50%-1rem)] xl:w-[calc(50%-1rem)] flex flex-col transition-all duration-300 rounded-3xl border-2 border-amber-400/60 shadow-[0_0_30px_rgba(245,158,11,0.25)] overflow-hidden group">
+
+                        {{-- 3. Header Tajuk: Ditambah min-h-[120px] supaya ketinggian kotak tajuk seimbang antara 1 baris & 3 baris --}}
+                        <div class="relative w-full min-h-[120px] p-5 sm:p-6 flex items-center justify-center text-center bg-black border-amber-400/40 overflow-hidden flex-shrink-0">
 
                             {{-- 1. Dramatic Gold Spotlights (Top Left & Top Right) --}}
                             <div class="absolute -top-12 -left-12 w-44 h-44 bg-gradient-to-br from-amber-200/40 via-amber-400/15 to-transparent rounded-full blur-3xl pointer-events-none"></div>
@@ -288,7 +314,6 @@ $viewWinners = function ($programId) {
                                 {{-- Confetti Group 3: Gold Ribbon Swirls & Diamonds --}}
                                 <svg class="absolute top-1 left-[48%] w-3 h-3 text-amber-300 rotate-45" fill="currentColor" viewBox="0 0 20 20"><polygon points="10,0 20,10 10,20 0,10"/></svg>
                                 <svg class="absolute bottom-1 right-[10%] w-4 h-4 text-amber-400 -rotate-12" fill="currentColor" viewBox="0 0 20 20"><polygon points="10,0 20,10 10,20 0,10"/></svg>
-
                             </div>
 
                             {{-- Top Gold Border Accent Line --}}
@@ -296,9 +321,7 @@ $viewWinners = function ($programId) {
 
                             {{-- Centered Header Content with Laurel Wreath --}}
                             <div class="relative z-10 flex flex-col items-center justify-center text-center px-2 space-y-1">
-
                                 <div class="relative flex items-center justify-center w-full max-w-xl gap-2 sm:gap-3">
-
                                     <h3 class="text-lg sm:text-xl md:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-100 to-amber-400 tracking-wider uppercase leading-snug drop-shadow-[0_2px_10px_rgba(245,158,11,0.5)]">
                                         {{ $activeProgram->title }}
                                     </h3>
@@ -310,8 +333,8 @@ $viewWinners = function ($programId) {
 
                         </div>
 
-                        {{-- Content Body (Always Visible - No Accordion/Collapsible) --}}
-                        <div class="relative p-2 sm:p-7 md:p-8 bg-black  space-y-6 overflow-hidden">
+                        {{-- Content Body: Ditukar kepada justify-center supaya kad podium berada tepat di tengah-tengah --}}
+                        <div class="relative p-2 sm:p-7 md:p-8 bg-black space-y-6 overflow-hidden flex-1 flex flex-col justify-center">
 
                             {{-- Rich Confetti Particles Layer inside Body --}}
                             <div class="absolute inset-0 pointer-events-none overflow-hidden opacity-60 z-0">
@@ -338,7 +361,7 @@ $viewWinners = function ($programId) {
                             @endphp
 
                             {{-- Kad Podium 3 Pemenang --}}
-                            <div class="relative z-10 grid grid-cols-1 xl:grid-cols-3 gap-5 items-end max-w-full mx-auto pt-1 pb-1">
+                            <div class="relative z-10 grid grid-cols-1 xl:grid-cols-3 gap-5 items-end max-w-full mx-auto pt-1 pb-1 w-full">
                                 @forelse($orderedWinners as $index => $winner)
                                     @php
                                         $isJuara = $winner->achievement === 'Juara';
@@ -386,7 +409,7 @@ $viewWinners = function ($programId) {
                                             {{-- Nama Kumpulan --}}
                                             <div class="absolute bottom-2.5 left-3 right-3 z-10">
                                                 <span class="flex flex-wrap items-center gap-1 px-2.5 py-1 rounded-md bg-black/90 border border-amber-400/30 text-amber-200 text-[10px] font-bold backdrop-blur-md w-full whitespace-normal break-words shadow-md leading-tight">
-                                                   {{ $winner->archive->group_name ?? '-' }} ({{ $winner->archive->department->name ?? '-' }})
+                                                   {{ $winner->archive->group_name ?? '-' }} K ({{ $winner->archive->department->name ?? '-' }})
                                                 </span>
                                             </div>
                                         </div>
@@ -394,7 +417,7 @@ $viewWinners = function ($programId) {
                                         {{-- Kandungan Kad --}}
                                         <div class="p-5 flex-1 flex flex-col justify-between space-y-3" x-data="{ showMore: false }">
                                             <div class="space-y-2">
-                                                <h4 class="font-black {{ $isJuara ? 'text-base md:text-lg' : 'text-sm' }}  text-slate-100 leading-snug line-clamp-2 group-hover:text-amber-300 transition-colors">
+                                                <h4 class="font-black {{ $isJuara ? 'text-base md:text-lg' : 'text-sm' }} text-slate-100 leading-snug line-clamp-2 group-hover:text-amber-300 transition-colors">
                                                     {{ $winner->archive->project_name ?? 'Tiada Tajuk' }}
                                                 </h4>
 

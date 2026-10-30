@@ -54,8 +54,6 @@ class Program extends Model
             'target_submission_ids'   => 'array',
             'announcement_start_date' => 'datetime',
             'announcement_end_date'   => 'datetime',
-            'start_date'              => 'date',
-            'end_date'                => 'date',
         ];
     }
 
