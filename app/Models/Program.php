@@ -32,7 +32,6 @@ class Program extends Model
         'publication_id',
         'form_publication_id',
         'time_limit',
-        'competition_id',
         'created_by',
         'visibility_type',
         'target_program_ids',
@@ -42,6 +41,7 @@ class Program extends Model
         'submission_pdf_form',
         'announcement_start_date',
         'announcement_end_date',
+        'material_url',
     ];
 
     /**
@@ -93,11 +93,6 @@ class Program extends Model
                     ->exists();
     }
 
-    public function competition()
-    {
-        return $this->hasOne(Competition::class, 'program_id');
-    }
-
     public function quizSubmissions()
     {
         return $this->hasMany(QuizSubmission::class);
@@ -120,4 +115,5 @@ class Program extends Model
         $ids = $this->target_submission_ids ?? [];
         return Submission::with('projectDetail')->whereIn('id', $ids)->get();
     }
+
 }

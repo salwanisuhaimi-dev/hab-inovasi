@@ -189,35 +189,94 @@ $viewWinners = function ($programId) use ($loadProgramWinners) {
     <x-top-nav />
     <div class="relative z-10">
 
-        <header class="relative py-32 px-6 bg-gray-900 overflow-visible">
-            <div class="absolute inset-0 z-0 overflow-hidden">
-                <img src="{{ asset('images/corporate.jpeg') }}"
-                    class="w-full h-full object-cover opacity-40 scale-125 transform"
-                    style="object-position: center;"
-                    alt="Innovation Background">
-                <div class="absolute inset-0 bg-black/50"></div>
-                <div class="absolute inset-0 bg-gradient-to-b from-gray-900/80 via-transparent to-gray-900"></div>
-            </div>
+      <header class="relative min-h-[85vh] flex items-center justify-center px-6 overflow-hidden bg-slate-950">
 
-            <div class="max-w-4xl mx-auto text-center relative z-10">
-                 <h2 class="text-5xl md:text-7xl font-black text-white mb-8 tracking-tighter leading-tight">
-                    Memacu Inovasi, <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400"><br>Merealisasi Reformasi. </span>
-                </h2>
+          <!-- 1. Background Image with Subtle Ken Burns Zoom (No flat gray overlay) -->
+          <div class="absolute inset-0 z-0 overflow-hidden">
+              <img src="{{ asset('images/corporate.jpeg') }}"
+                   class="w-full h-full object-cover object-center select-none pointer-events-none brightness-90 contrast-105 animate-kenburns"
+                   loading="eager"
+                   fetchpriority="high"
+                   decoding="async"
+                   alt="Innovation Background">
 
-                <p class="text-lg text-gray-300 max-w-3xl mx-auto leading-relaxed mb-10">
-                    Platform sehenti inovasi JPA yang menghubungkan idea, pengetahuan, teknologi dan warga untuk meneroka peluang penambahbaikan serta menghasilkan penyelesaian yang memberi nilai tambah kepada organisasi dan perkhidmatan awam.
-                </p>
+              <!-- Natural Vignette to protect edge contrast -->
+              <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-slate-950/70"></div>
+          </div>
 
-                <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-                    <a href="{{ route('archive') }}" class="w-full sm:w-auto px-8 py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition shadow-xl">
-                        Lihat Arkib Projek
-                    </a>
-                    <a href="{{ route('pitch') }}" class="w-full sm:w-auto px-8 py-4 bg-white/10 backdrop-blur-md text-white border border-white/20 rounded-2xl font-bold hover:bg-white/20 transition">
-                        Hantar Idea Baru
-                    </a>
-                </div>
-            </div>
-        </header>
+          <!-- 2. Hero Content -->
+          <div class="max-w-4xl mx-auto text-center relative z-10 py-20">
+
+              <!-- Ambient Text Backlight (Makes text crisp without darkening the whole image) -->
+              <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 max-w-xl h-36 bg-blue-500/20 blur-[100px] rounded-full pointer-events-none -z-10"></div>
+
+              <!-- Headline: Tight tracking + Flowing gradient animation -->
+              <h2 class="text-4xl sm:text-6xl md:text-7xl font-extrabold text-white mb-8 tracking-tight leading-[1.15] drop-shadow-md">
+                  Memacu Inovasi, <br class="hidden sm:inline">
+                  <span class="font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-200 to-cyan-300 bg-[length:200%_auto] animate-gradient-flow inline-block">
+                      Merealisasi Reformasi.
+                  </span>
+              </h2>
+
+              <!-- Description: Airy typography with balanced line-height for readability -->
+              <p class="text-base sm:text-lg text-slate-200/90 max-w-3xl mx-auto leading-relaxed font-light tracking-wide mb-10 drop-shadow antialiased">
+                  Platform sehenti inovasi JPA yang menghubungkan idea, pengetahuan, teknologi dan warga untuk meneroka peluang penambahbaikan serta menghasilkan penyelesaian yang memberi nilai tambah kepada organisasi dan perkhidmatan awam.
+              </p>
+
+              <!-- CTA Buttons with Micro-interactions -->
+              <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                  <a href="{{ route('archive') }}"
+                     class="group relative inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-bold transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_0_25px_rgba(37,99,235,0.45)] active:scale-[0.98]">
+                      <span>Lihat Arkib Projek</span>
+                      <svg class="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                      </svg>
+                  </a>
+
+                  <a href="{{ route('pitch') }}"
+                     class="inline-flex items-center justify-center w-full sm:w-auto px-8 py-4 bg-black/30 hover:bg-white/10 text-white border border-white/25 hover:border-white/40 rounded-2xl font-bold backdrop-blur-md transition-all duration-300 hover:scale-[1.03] active:scale-[0.98] shadow-lg shadow-black/30">
+                      Hantar Idea Baru
+                  </a>
+              </div>
+
+          </div>
+      </header>
+
+      <!-- Styles for animations (Place in your layout head or app.css) -->
+      <style>
+          @keyframes kenburns {
+              0% {
+                  transform: scale(1.0);
+              }
+              50% {
+                  transform: scale(1.05);
+              }
+              100% {
+                  transform: scale(1.0);
+              }
+          }
+
+          @keyframes gradientFlow {
+              0% {
+                  background-position: 0% 50%;
+              }
+              50% {
+                  background-position: 100% 50%;
+              }
+              100% {
+                  background-position: 0% 50%;
+              }
+          }
+
+          .animate-kenburns {
+              animation: kenburns 20s ease-in-out infinite alternate;
+              transform-origin: center center;
+          }
+
+          .animate-gradient-flow {
+              animation: gradientFlow 5s ease-in-out infinite;
+          }
+      </style>
 
         <section class="relative mx-auto max-w-7xl px-6" style="margin-top: -100px; z-index: 30;">
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

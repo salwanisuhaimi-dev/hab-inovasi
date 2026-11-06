@@ -52,6 +52,7 @@ state([
     'selected_program_id'   => null,
     'announcement_start_date' => '',
     'announcement_end_date'   => '',
+    'material_url' => '',
 ]);
 
 // Auto sync when "Sama seperti tarikh mula program" is toggled
@@ -139,7 +140,7 @@ with([
           ->when($this->date_to, function ($query) {
               $query->whereDate('start_date', '<=', $this->date_to);
             })
-          ->paginate(12, ['*'], 'page'),    
+          ->paginate(12, ['*'], 'page'),
     'categories' => fn() => \App\Models\ProgramType::where('is_active', '1')->orderBy('name')->get(),
     'competitions' => fn() => \App\Models\Competition::latest()->get(),
     'globalActivities' => fn() => $this->showGlobalHistory
@@ -596,84 +597,75 @@ $saveAnnouncementDates = function () {
                                 @error('category_id') <span class="text-red-500 text-[10px]">{{ $message }}</span> @enderror
                             </div>
 
-                            @if((int) $category_id === 8)
-                                <div class="p-5 bg-blue-50/50 border border-blue-100 rounded-2xl space-y-4 mt-4">
-                                     <div class="flex items-center justify-between border-b border-blue-100 pb-3">
-                                          <h4 class="text-xs font-black text-blue-900 uppercase tracking-wider flex items-center gap-2">
-                                              Jenis Penyertaan
-                                          </h4>
-                                     </div>
+                            @php
+                                $isEnabled = (int) $category_id === 8;
+                            @endphp
 
-                                     {{-- 1. PILIHAN FORMAT PENYERTAAN --}}
-                                     <div>
-                                          <label class="block text-xs font-black text-gray-500 uppercase mb-1">
-                                            Format Penyertaan <span class="text-red-500">*</span>
-                                          </label>
-                                          <select wire:model.live="other_submission_format" class="w-full rounded-xl border-gray-200 bg-white focus:border-blue-500 focus:ring-blue-500 p-3 text-sm font-bold text-gray-700">
-                                                <option value="notes">Teks Sahaja</option>
-                                                <option value="external_link">Pautan Luar / Google Forms</option>
-                                                <option value="upload_form">Muat Naik Borang</option>
-                                          </select>
-                                          @error('other_submission_format') <span class="text-red-500 text-[10px] block mt-1">{{ $message }}</span> @enderror
-                                     </div>
-
-                                     {{-- 2. INPUT PAUTAN URL --}}
-                                     @if($other_submission_format === 'external_link')
-                                     <div class="pt-2">
-                                          <label class="block text-xs font-black text-gray-700 uppercase mb-1">
-                                              Pautan URL Borang Luar <span class="text-red-500">*</span>
-                                          </label>
-                                          <input type="url"
-                                                wire:model="submission_external_link"
-                                                placeholder="https://forms.google.com/..."
-                                                class="w-full rounded-xl border-gray-200 bg-white p-3 text-sm focus:border-blue-500 focus:ring-blue-500">
-                                          <p class="text-[10px] text-gray-400 mt-1">Sediakan pautan Google Form, Drive, atau laman web luar untuk diakses peserta.</p>
-                                          @error('submission_external_link') <span class="text-red-500 text-[10px] block mt-1">{{ $message }}</span> @enderror
-                                     </div>
-                                     @endif
-
-                                     @if($other_submission_format === 'upload_form')
-                                     <div class="pt-2">
-                                          <label class="block text-xs font-black text-gray-700 uppercase mb-1">
-                                                Muat Naik Borang Templat (PDF / Word) <span class="text-red-500">*</span>
-                                          </label>
-
-                                          @if($existing_submission_pdf_form)
-                                          <div class="mb-3 p-3 bg-white rounded-xl border border-blue-200 flex items-center justify-between shadow-sm">
-                                               <div class="flex items-center gap-2">
-                                                    <div>
-                                                        <span class="text-xs font-bold text-gray-800 block">Fail Sedia Ada</span>
-                                                        <span class="text-[10px] text-gray-400">Muat naik fail baharu di bawah jika mahu menggantikannya.</span>
-                                                    </div>
-                                               </div>
-                                               <a href="{{ Storage::url($existing_submission_pdf_form) }}" target="_blank" class="px-3 py-1 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-xs font-bold transition">
-                                                    Lihat Fail
-                                               </a>
-                                          </div>
-                                          @endif
-
-                                          <input type="file"
-                                              wire:model="submission_pdf_form"
-                                              accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                                              class="w-full text-sm text-gray-500 bg-white border border-gray-200 rounded-xl p-2.5 focus:border-blue-500">
-                                              <p class="text-[10px] text-gray-400 mt-1">Maksimum saiz fail: 10MB (Format PDF, DOC, atau DOCX)</p>
-                                          @error('submission_pdf_form') <span class="text-red-500 text-[10px] block mt-1">{{ $message }}</span> @enderror
-                                     </div>
-                                     @endif
-                                </div>
-                            @endif
-
-                            {{-- 3. Pertandingan --}}
                             <div>
-                                <label class="block text-xs font-black text-gray-400 uppercase mb-1">Pertandingan <span class="text-gray-400 font-normal lowercase">(optional)</span></label>
-                                <select wire:model.live="competition_id" class="w-full rounded-xl border-gray-200 bg-gray-50 focus:border-blue-500 focus:ring-blue-500 p-3 text-sm">
-                                    <option value="">Pilih Pertandingan</option>
-                                    @foreach($competitions as $competition)
-                                        <option value="{{ $competition->id }}">{{ $competition->name }}</option>
-                                    @endforeach
-                                </select>
-                                @error('competition_id') <span class="text-red-500 text-[10px]">{{ $message }}</span> @enderror
-                            </div>
+                                <label class="block text-xs font-black text-gray-400 uppercase mb-1">Format Penyertaan</label>
+                                {{-- 1. PILIHAN FORMAT PENYERTAAN --}}
+                                <div>
+                                    <select
+                                        wire:model.live="other_submission_format"
+                                        @disabled(!$isEnabled)
+                                        class="w-full rounded-xl border-gray-200 p-3 text-sm font-bold {{ $isEnabled ? 'bg-white text-gray-700 focus:border-blue-500 focus:ring-blue-500' : 'bg-gray-100 text-gray-400 cursor-not-allowed' }}">
+                                        <option value="notes">Teks Sahaja</option>
+                                        <option value="external_link">Pautan Luar / Google Forms</option>
+                                        <option value="upload_form">Muat Naik Borang</option>
+                                    </select>
+                                    @error('other_submission_format') <span class="text-red-500 text-[10px] block mt-1">{{ $message }}</span> @enderror
+                                </div>
+
+                                {{-- 2. INPUT PAUTAN URL --}}
+                                @if($other_submission_format === 'external_link')
+                                <div class="pt-2">
+                                    <label class="block text-xs font-black uppercase mb-1 {{ $isEnabled ? 'text-gray-700' : 'text-gray-400' }}">
+                                        Pautan URL Borang Luar <span class="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="url"
+                                        wire:model="submission_external_link"
+                                        @disabled(!$isEnabled)
+                                        placeholder="https://forms.google.com/..."
+                                        class="w-full rounded-xl border-gray-200 p-3 text-sm {{ $isEnabled ? 'bg-white focus:border-blue-500 focus:ring-blue-500' : 'bg-gray-100 text-gray-400 cursor-not-allowed' }}">
+                                    <p class="text-[10px] text-gray-400 mt-1">Sediakan pautan Google Form, Drive, atau laman web luar untuk diakses peserta.</p>
+                                    @error('submission_external_link') <span class="text-red-500 text-[10px] block mt-1">{{ $message }}</span> @enderror
+                                </div>
+                                @endif
+
+                                {{-- 3. INPUT MUAT NAIK BORANG --}}
+                                @if($other_submission_format === 'upload_form')
+                                <div class="pt-2">
+                                    <label class="block text-xs font-black uppercase mb-1 {{ $isEnabled ? 'text-gray-700' : 'text-gray-400' }}">
+                                        Muat Naik Borang Templat (PDF / Word) <span class="text-red-500">*</span>
+                                    </label>
+
+                                    @if($existing_submission_pdf_form)
+                                    <div class="mb-3 p-3 bg-white rounded-xl border border-blue-200 flex items-center justify-between shadow-sm">
+                                        <div class="flex items-center gap-2">
+                                            <div>
+                                                <span class="text-xs font-bold text-gray-800 block">Fail Sedia Ada</span>
+                                                <span class="text-[10px] text-gray-400">Muat naik fail baharu di bawah jika mahu menggantikannya.</span>
+                                            </div>
+                                        </div>
+                                        <a href="{{ Storage::url($existing_submission_pdf_form) }}" target="_blank" class="px-3 py-1 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-xs font-bold transition">
+                                            Lihat Fail
+                                        </a>
+                                    </div>
+                                    @endif
+
+                                    <input
+                                        type="file"
+                                        wire:model="submission_pdf_form"
+                                        @disabled(!$isEnabled)
+                                        accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                                        class="w-full text-sm border border-gray-200 rounded-xl p-2.5 {{ $isEnabled ? 'text-gray-500 bg-white focus:border-blue-500' : 'text-gray-400 bg-gray-100 cursor-not-allowed' }}">
+                                    <p class="text-[10px] text-gray-400 mt-1">Maksimum saiz fail: 10MB (Format PDF, DOC, atau DOCX)</p>
+                                    @error('submission_pdf_form') <span class="text-red-500 text-[10px] block mt-1">{{ $message }}</span> @enderror
+                                </div>
+                                @endif
+                           </div>
+
 
                             {{-- 4. Tarikh Mula Program --}}
                             <div>
@@ -780,7 +772,7 @@ $saveAnnouncementDates = function () {
                             {{-- 12. Penerangan (Full Width) --}}
                             <div class="md:col-span-2">
                                 <label class="block text-xs font-black text-gray-400 uppercase mb-1">Penerangan</label>
-                                <textarea wire:model="description" rows="2" placeholder="Berikan sedikit ringkasan tentang program ini..." class="w-full bg-slate-50 border-gray-200 rounded-xl p-3 text-sm font-medium focus:ring-2 focus:ring-blue-500 transition-all"></textarea>
+                                <textarea wire:model="description" rows="5" placeholder="Berikan sedikit ringkasan tentang program ini..." class="w-full bg-slate-50 border-gray-200 rounded-xl p-3 text-sm font-medium focus:ring-2 focus:ring-blue-500 transition-all"></textarea>
                                 @error('description') <span class="text-red-500 text-[10px] font-bold mt-1 block">{{ $message }}</span> @enderror
                             </div>
 
@@ -816,7 +808,7 @@ $saveAnnouncementDates = function () {
                                     <label class="flex items-start p-3 border rounded-xl cursor-pointer transition hover:bg-gray-50 {{ $visibility_type === 'all' ? 'border-indigo-600 ring-1 ring-indigo-600 bg-indigo-50/20' : 'border-gray-200' }}">
                                         <input type="radio" wire:model.live="visibility_type" value="all" class="mt-1 text-indigo-600 focus:ring-indigo-500">
                                         <div class="ms-3">
-                                            <span class="block text-sm font-medium text-gray-900">Terbuka Kepada Semua (Public)</span>
+                                            <span class="block text-sm font-medium text-gray-900">Terbuka Kepada Semua (Generik)</span>
                                             <span class="block text-xs text-gray-500">Sesiapa sahaja boleh melihat dan mendaftar program ini.</span>
                                         </div>
                                     </label>
@@ -825,7 +817,7 @@ $saveAnnouncementDates = function () {
                                     <label class="flex items-start p-3 border rounded-xl cursor-pointer transition hover:bg-gray-50 {{ $visibility_type === 'program_participants' ? 'border-indigo-600 ring-1 ring-indigo-600 bg-indigo-50/20' : 'border-gray-200' }}">
                                         <input type="radio" wire:model.live="visibility_type" value="program_participants" class="mt-1 text-indigo-600 focus:ring-indigo-500">
                                         <div class="ms-3">
-                                            <span class="block text-sm font-medium text-gray-900">Peserta Program Prasyarat</span>
+                                            <span class="block text-sm font-medium text-gray-900">Peserta Program Fungsian</span>
                                             <span class="block text-xs text-gray-500">Hanya peserta program terpilih dibenarkan.</span>
                                         </div>
                                     </label>
@@ -835,7 +827,7 @@ $saveAnnouncementDates = function () {
                             {{-- PREREQUISITE PROGRAM SELECTION (Full Width) --}}
                             @if($visibility_type === 'program_participants')
                                 <div class="md:col-span-2 p-4 bg-gray-50 rounded-2xl border border-gray-200 space-y-2">
-                                    <label class="block text-xs font-bold text-gray-700 uppercase">Pilih Program Prasyarat:</label>
+                                    <label class="block text-xs font-bold text-gray-700 uppercase">Pilih Program Fungsian:</label>
                                     <select wire:model="target_program_id" class="w-full rounded-xl border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500 p-3">
                                         <option value="">-- Pilih Program --</option>
                                         @foreach(App\Models\Program::when($editing, fn($q) => $q->where('id', '!=', $editing))->latest()->get() as $p)
@@ -917,7 +909,7 @@ $saveAnnouncementDates = function () {
     @endif
 
     <!-- Announcement Modal -->
-    <div x-data="{ open: @entangle('showAnnouncementModal') }"
+<div x-data="{ open: @entangle('showAnnouncementModal') }"
      x-show="open"
      x-cloak
      class="fixed inset-0 z-50 overflow-y-auto"

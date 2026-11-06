@@ -36,7 +36,7 @@ with([
     'sessions' => fn() => CoffeeBreakSession::where('created_by', auth()->id())
         ->with(['user.department'])
         ->latest('date_created')
-        ->get(),
+        ->paginate(12),
     'departments' => fn() => \App\Models\Department::orderBy('name')->get(),
 ]);
 
@@ -247,6 +247,10 @@ mount(function () {
                 @endforelse
             </tbody>
         </table>
+    </div>
+
+    <div class="mt-10">
+        {{ $sessions->links() }}
     </div>
 
     {{-- Modal Form --}}

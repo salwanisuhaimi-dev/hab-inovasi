@@ -19,7 +19,7 @@ class Competition extends Model
         'prizes',
         'categories',
         'tracks',
-        'image_path'
+        'program_id'
     ];
 
     protected $casts = [
@@ -34,5 +34,11 @@ class Competition extends Model
     {
         return $this->belongsToMany(Archive::class);
     }
+
+    public function program()
+    {
+        return $this->hasOne(Program::class, 'competition_id');
+    }
+
 
 }

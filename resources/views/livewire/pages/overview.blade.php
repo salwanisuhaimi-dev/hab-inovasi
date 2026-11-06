@@ -9,30 +9,42 @@ layout('layouts.landing');
 
 state([
     'competition' => null,
-    'isExpired' => false,
     'program' => null,
     'openIndex' => null,
+    'isNotStarted' => false,
+    'isExpired' => false,
     'hasSubmitted' => false
 ]);
 
 mount(function (Competition $competition) {
     $this->competition = $competition;
 
-    // 1. Dapatkan program berserta semakan jika user ID semasa wujud dalam table submissions bagi program_id ini
-    $this->program = Program::withExists(['submissions as has_submitted' => function($query) {
-        $query->where('user_id', auth()->id());
-    }])->where('competition_id', $competition->id)->first();
-
-    if ($this->program) {
-        // Set nilai status penyertaan berdasarkan program_id
-        $this->hasSubmitted = $this->program->has_submitted ?? false;
-
-        // 2. Semak deadline program
-        if ($this->program->deadline) {
-            $this->isExpired = Carbon::now()->greaterThan(Carbon::parse($this->program->deadline));
+    // 1. Dapatkan program melalui competition->program_id
+        // Sekaligus semak kewujudan rekod user semasa dalam table submissions
+        if ($competition->program_id) {
+            $this->program = Program::withExists(['submissions as has_submitted' => function ($query) {
+                $query->where('user_id', auth()->id());
+            }])->find($competition->program_id);
         }
-    }
-});
+
+        if ($this->program) {
+            // Set status penyertaan pengguna
+            $this->hasSubmitted = (bool) ($this->program->has_submitted ?? false);
+
+            $now = Carbon::now();
+
+            // 2. Semak tarikh mula pendaftaran (start_date)
+            if ($this->program->submission_start_date) {
+                $this->isNotStarted = $now->lessThan(Carbon::parse($this->program->submission_start_date));
+            }
+
+            // 3. Semak tarikh tutup pendaftaran (end_date)
+            if ($this->program->deadline) {
+                $this->isExpired = $now->greaterThan(Carbon::parse($this->program->deadline));
+            }
+        }
+
+  });
 
 $toggle = function ($index) {
     $this->openIndex = $this->openIndex === $index ? null : $index;
@@ -88,55 +100,73 @@ $toggle = function ($index) {
 
               <!-- Lajur Kanan: Ruang Iklan Gambar & Butang -->
               <div class="lg:w-5/12 flex flex-col items-center lg:items-end justify-center w-full">
-                  <!-- Pembungkus Utama Gambar + Butang (Kekal max-w-[460px] & gap-8) -->
+                  <!-- Pembungkus Utama Gambar + Butang -->
                   <div class="w-full max-w-[460px] flex flex-col gap-8">
 
                       <!-- Bekas Gambar: h-[420px] & object-contain -->
                       <div class="relative group w-full h-[420px] flex items-center justify-center animate-float-premium">
                           <div class="absolute inset-0 bg-gradient-to-tr from-blue-500/20 via-purple-500/20 to-pink-500/25 blur-3xl opacity-75 group-hover:opacity-100 group-hover:scale-130 transition-all duration-700 ease-out pointer-events-none"></div>
 
-                          @if($competition->image_path)
-                              <img src="{{ asset('storage/' . $competition->image_path) }}"
-                                   alt="{{ $competition->name }}"
+                          @if($program && $program->image_path)
+                              {{-- Papar gambar daripada program --}}
+                              <img src="{{ asset('storage/' . $program->image_path) }}"
+                                   alt="{{ $competition->name ?? 'Program Banner' }}"
                                    class="relative z-10 w-full h-full object-contain transform scale-100 group-hover:scale-115 filter drop-shadow-[0_20px_30px_rgba(0,0,0,0.08)] group-hover:drop-shadow-[0_35px_45px_rgba(59,130,246,0.2)] transition-all duration-500 ease-out block">
                           @else
-                              <div class="relative z-10 flex flex-col items-center justify-center text-gray-400 gap-2">
-                                  <svg class="w-16 h-16 stroke-[1.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 00-1.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"></path></svg>
-                                  <span class="text-sm font-semibold tracking-wider uppercase text-gray-400">Tiada Gambar</span>
+                              {{-- Default Box Placeholder Image --}}
+                              <div class="relative z-10 w-full h-full flex flex-col items-center justify-center p-6">
+                                  <img src="https://illustrations.popertee.com/placeholder-box.svg"
+                                       onerror="this.onerror=null; this.src='https://placehold.co/600x400/f8fafc/94a3b8?text=Tiada+Gambar';"
+                                       alt="Default Placeholder"
+                                       class="w-48 h-48 object-contain opacity-75 transform group-hover:scale-105 transition-all duration-500">
+                                  <span class="text-xs font-semibold tracking-widest uppercase text-gray-400 mt-3">Tiada Gambar Program</span>
                               </div>
                           @endif
-                      </div> <!-- Tag penutup bekas gambar yang betul -->
+                      </div>
 
+                      <!-- Bahagian Butang Mengikut Status Program & Tarikh -->
                       <div class="w-full flex justify-center">
                           <div class="w-full max-w-xs">
-                              @if($hasSubmitted)
-
-                              @elseif($isExpired)
-                                  <button disabled
-                                          class="w-full bg-slate-100 text-slate-400 font-bold text-xs uppercase tracking-widest py-4 px-8 rounded-[1.8rem] text-center cursor-not-allowed block">
-                                      Pendaftaran Ditutup
-                                  </button>
-                              @elseif(!$program)
+                              @if(!$program)
+                                  {{-- 1. Program tiada / belum dipautkan ke competition --}}
                                   <button disabled
                                           class="w-full bg-amber-50 text-amber-600 font-bold text-xs uppercase tracking-widest py-4 px-8 rounded-[1.8rem] text-center cursor-not-allowed block">
                                       Program Tidak Ditemui
                                   </button>
+
+                              @elseif($hasSubmitted)
+
+                              @elseif($isNotStarted)
+                                  {{-- 3. Sebelum tarikh mula (program.start_date) --}}
+                                  <button disabled
+                                          class="w-full bg-slate-100 text-slate-400 font-bold text-xs uppercase tracking-widest py-4 px-8 rounded-[1.8rem] text-center cursor-not-allowed block">
+                                      Pendaftaran Belum Dibuka
+                                  </button>
+
+                              @elseif($isExpired)
+                                  {{-- 4. Selepas tarikh tamat (program.end_date) --}}
+                                  <button disabled
+                                          class="w-full bg-slate-100 text-slate-400 font-bold text-xs uppercase tracking-widest py-4 px-8 rounded-[1.8rem] text-center cursor-not-allowed block">
+                                      Pendaftaran Ditutup
+                                  </button>
+
                               @else
+                                  {{-- 5. Pendaftaran Dibuka (Dalam tempoh sah) --}}
                                   @auth
                                       @if(auth()->user()->role === 'admin' || auth()->user()->is_admin)
                                           <a href="#"
-                                             onclick="alert('Akses tidak dibenarkan untuk Admin.'); return false;"
+                                             onclick="alert('Akses penyertaan tidak dibenarkan untuk akaun Admin.'); return false;"
                                              class="w-full bg-slate-900 text-white font-bold text-xs uppercase tracking-widest py-4 px-8 rounded-[1.8rem] text-center shadow-md block transition-all duration-300 transform active:scale-95">
                                               Sertai Sekarang
                                           </a>
                                       @else
-                                          <a href="{{ route('project.submit', $program->id) }}"
+                                          <a href="{{ route('submissions.create', ['program' => $program->id, 'submission_slug' => $program->category->submission_slug]) }}"
                                              class="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 hover:from-blue-700 hover:via-indigo-700 hover:to-violet-700 text-white font-bold text-xs uppercase tracking-widest py-4 px-8 rounded-[1.8rem] text-center shadow-[0_10px_25px_rgba(79,70,229,0.2)] hover:shadow-[0_15px_30px_rgba(79,70,229,0.3)] block transition-all duration-300 transform active:scale-95 subpixel-antialiased">
                                               Sertai Sekarang &rarr;
                                           </a>
                                       @endif
                                   @else
-                                      <a href="{{ route('login') }}?intended={{ urlencode(route('project.submit', $program->id)) }}"
+                                      <a href="{{ route('login') }}?intended={{ urlencode(route('submissions.create', ['program' => $program->id, 'submission_slug' => $program->category->submission_slug])) }}"
                                          class="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 hover:from-blue-700 hover:via-indigo-700 hover:to-violet-700 text-white font-bold text-xs uppercase tracking-widest py-4 px-8 rounded-[1.8rem] text-center shadow-[0_10px_25px_rgba(79,70,229,0.2)] hover:shadow-[0_15px_30px_rgba(79,70,229,0.3)] block transition-all duration-300 transform active:scale-95 subpixel-antialiased">
                                           Daftar & Sertai &rarr;
                                       </a>
@@ -144,8 +174,9 @@ $toggle = function ($index) {
                               @endif
                           </div>
                       </div>
-                  </div> <!-- Penutup bagi w-full max-w-[460px] -->
-              </div> <!-- Penutup bagi lg:w-5/12 -->
+
+                  </div>
+              </div>
 
           </div>
       </header>

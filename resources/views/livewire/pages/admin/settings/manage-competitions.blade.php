@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Competition;
+use App\Models\Program;
 use function Livewire\Volt\{layout, state, with, usesFileUploads};
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -24,8 +25,7 @@ state([
     'tracks' => [''],
     'categories' => [''],
     'emojis' => ['💡', '🤝', '🎯', '🚀', '📝', '🏆', '✨', '🔍', '⚙️', '📊'],
-    'image' => null,
-    'currentImage' => '',
+    'program_id' => '',
 ]);
 
 $edit = function (Competition $competition) {
@@ -46,13 +46,13 @@ $edit = function (Competition $competition) {
     $this->requirements = $competition->requirements ?? [['title' => '', 'desc' => '', 'is_allowed' => true]];
     $this->tracks = $competition->tracks ?? [''];
     $this->categories = $competition->categories ?? [''];
-    $this->currentImage = $competition->image_path ?? '';
-    $this->image = null;
+    $this->program_id = $competition->program_id;
 
 };
 
 with([
     'competitions' => fn() => Competition::latest()->get(),
+    'programs' => fn() => Program::latest()->get()
 ]);
 
 $addObjective = fn() => $this->sub_objectives[] = ['icon' => '💡', 'title' => '', 'desc' => ''];
@@ -73,7 +73,6 @@ $save = function () {
         'name' => 'required|string|max:255',
         'cycle' => 'required|integer',
         'main_objective' => 'required',
-        'image' => 'nullable|image|max:10240'
     ]);
 
     $payload = [
@@ -91,47 +90,8 @@ $save = function () {
         'prizes'        => $this->prizes,
         'tracks'        => $this->tracks,
         'categories'    => $this->categories ?? [],
+        'program_id'    => $this->program_id
     ];
-
-    // storage/app/public/competitions/
-
-    if ($this->image) {
-        $temporaryPath = $this->image->getRealPath();
-        $extension = strtolower($this->image->getClientOriginalExtension());
-
-        $filename = 'competitions/' . Str::random(40) . '.jpg'; // Saving as .jpg is best for compression
-        $absoluteStoragePath = storage_path('app/public/' . $filename);
-
-        if (!file_exists(dirname($absoluteStoragePath))) {
-            mkdir(dirname($absoluteStoragePath), 0755, true);
-        }
-
-        switch ($extension) {
-            case 'jpeg':
-            case 'jpg':
-                $sourceImage = @imagecreatefromjpeg($temporaryPath);
-                break;
-            case 'png':
-                $sourceImage = @imagecreatefrompng($temporaryPath);
-                break;
-            case 'webp':
-                $sourceImage = @imagecreatefromwebp($temporaryPath);
-                break;
-            default:
-                $sourceImage = false;
-        }
-
-        if ($sourceImage) {
-            imagejpeg($sourceImage, $absoluteStoragePath, 70);
-
-            imagedestroy($sourceImage);
-
-            $payload['image_path'] = $filename;
-        } else {
-            $path = $this->image->store('competitions', 'public');
-            $payload['image_path'] = $path;
-        }
-    }
 
     if ($this->editing) {
         Competition::find($this->editing)->update($payload);
@@ -149,7 +109,7 @@ $openCreateModal = function() {
     $this->reset([
         'editing', 'name', 'slug', 'description', 'introduction',
         'cycle', 'main_objective', 'sub_objectives', 'prizes',
-        'requirements', 'tracks', 'categories', 'image', 'currentImage'
+        'requirements', 'tracks', 'categories', 'program_id'
     ]);
 
     $this->sub_objectives = [['icon' => '💡', 'title' => '', 'desc' => '']];
@@ -377,46 +337,20 @@ $openCreateModal = function() {
                                     <button type="button" wire:click="addCategory" class="text-xs font-bold text-blue-600 hover:underline">+ Tambah Kategori</button>
                                 </div>
                             </section>
+
+                            <section class="space-y-4">
+                                <h3 class="text-sm font-black text-blue-600 uppercase tracking-widest border-b pb-2">7. Program Semasa</h3>
+                                <div class="space-y-2">
+                                  <select wire:model.live="program_id" class="w-full rounded-xl border-gray-200 bg-gray-50 focus:border-blue-500 focus:ring-blue-500 p-3 text-sm">
+                                      <option value="">Pilih Program</option>
+                                      @foreach($programs as $program)
+                                          <option value="{{ $program->id }}">{{ $program->title }}</option>
+                                      @endforeach
+                                  </select>
+                                </div>
+                            </section>
+
                         </div>
-
-                        <div class="mb-5">
-                            <label class="block text-xs font-bold uppercase tracking-wider text-stone-500 mb-2">Poster / Gambar Pertandingan</label>
-                            <div class="flex flex-col items-center justify-center border-2 border-dashed border-stone-300 rounded-[2rem] p-6 bg-stone-50/50">
-                                @if ($image)
-                                <div class="relative w-40 h-40 mb-3">
-                                    <img src="{{ $image->temporaryUrl() }}" class="w-full h-full object-cover rounded-2xl shadow-md">
-                                </div>
-                                <span class="text-[10px] bg-amber-100 text-amber-800 px-3 py-0.5 rounded-full uppercase font-black tracking-wider">Previu Fail Baru</span>
-                                @elseif ($currentImage)
-                                <div class="relative w-40 h-40 mb-3">
-                                    <img src="{{ asset('storage/' . $currentImage) }}" class="w-full h-full object-cover rounded-2xl shadow-md">
-                                </div>
-                                <span class="text-[10px] bg-emerald-100 text-emerald-800 px-3 py-0.5 rounded-full uppercase font-black tracking-wider">Gambar Semasa</span>
-                                @else
-                                <div class="w-12 h-12 bg-stone-100 rounded-xl flex items-center justify-center text-stone-400 mb-3 text-xl">
-                                    🖼️
-                                </div>
-                                <p class="text-[11px] text-stone-400 uppercase font-black tracking-wider">Tiada Gambar Disertakan</p>
-                                @endif
-                          </div>
-                      </div>
-
-                      <div class="mb-6">
-                          <div class="relative">
-                              <input type="file" wire:model="image" id="comp_image_field" class="hidden" accept="image/*">
-                              <label for="comp_image_field" class="w-full bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold py-3 px-4 rounded-xl transition-all cursor-pointer block text-center text-xs border border-stone-300 shadow-sm">
-                                  {{ $image || $currentImage ? 'Tukar Pilihan Gambar' : 'Pilih Fail Gambar' }}
-                              </label>
-                          </div>
-
-                          <div wire:loading wire:target="image" class="text-[10px] text-orange-600 font-black italic animate-pulse text-center mt-2 block">
-                              Sedang memproses gambar sementara... ⏳
-                          </div>
-
-                          @error('image')
-                                <span class="text-xs text-red-600 font-bold mt-1 block pl-1">{{ $message }}</span>
-                            @enderror
-                      </div>
 
                         <div class="pt-6 border-t flex gap-3 sticky bottom-0 bg-white">
                             <button type="submit" class="flex-1 bg-blue-600 text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-blue-700 transition shadow-xl shadow-blue-200">

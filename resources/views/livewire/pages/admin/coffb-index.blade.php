@@ -319,6 +319,11 @@ $export = function () {
         </div>
     </div>
 
+    <div class="mt-10">
+        {{ $sessions->links() }}
+    </div>
+
+
     {{-- Modal Form --}}
     @if($showModal)
         <div class="fixed inset-0 z-[100] flex items-center justify-center p-4">
